@@ -87,6 +87,19 @@ defmodule MishkaChelekom.CmsBundleExporter do
   @tier1_import_modules ["Phoenix.LiveView.Utils"]
   @tier1_use_modules ["Phoenix.Component", "Gettext"]
 
+  # `use Phoenix.LiveComponent` is the source saying "this module is a live component", and the
+  # consuming CMS says the same thing a different way: `stateful: true` on the row makes its
+  # compiler emit `use <Web>, :live_component` itself. Splicing this line into the prelude would
+  # land it in a module that already said that, so it is read as a SIGNAL and never as a prelude
+  # line. The `.exs`'s `stateful:` key is the authoritative channel; a source and a config that
+  # disagree are logged at `convert/5`.
+  @live_component_use_module "Phoenix.LiveComponent"
+
+  # `Phoenix.Component`'s own `@non_assignables`, which is not exported. A live component declaring
+  # one of these raises when LiveView assigns it, and MishkaCMS refuses such a row at its action
+  # boundary — a bundle carrying one is a bundle that cannot be installed.
+  @reserved_stateful_attrs ~w(uploads streams socket myself)
+
   @doc """
   Convert one `.exs` + `.eex` pair into an ordered list of v3
   component-params (one entry per public function in the source) plus
@@ -110,9 +123,9 @@ defmodule MishkaChelekom.CmsBundleExporter do
 
     with {:ok, config} <- read_exs(exs_source),
          max_source = render_maximal(eex_source, config),
-         {:ok, max_ast} <- parse_ast(max_source) do
-      walked = walk(max_ast)
-
+         {:ok, max_ast} <- parse_ast(max_source),
+         walked = walk(max_ast),
+         :ok <- check_live_component_shape(walked, config) do
       # Pre-pass over the RAW .eex (no eval) to collect the
       # `<%= if cond do %>` chain wrapping each `defp` declaration.
       # Used by `attach_helper_discriminators/2` to add an axis-filter
@@ -135,6 +148,85 @@ defmodule MishkaChelekom.CmsBundleExporter do
         |> Enum.map(&finalize_component_params/1)
 
       {:ok, %{components: components, scripts: config[:scripts] || []}}
+    end
+  end
+
+  # A live component's module IS the component: one `render/1`, one row, one name. Three source
+  # shapes are ordinary for a function component and cannot survive as a live one, and each is
+  # refused here rather than shipped — MishkaCMS refuses all three at its own action boundary, so a
+  # bundle carrying one installs nothing and says so far from the source that caused it.
+  defp check_live_component_shape(walked, config) do
+    case walked.live_component? or config[:stateful] == true do
+      false -> :ok
+      true -> live_component_shape(walked, config)
+    end
+  end
+
+  defp live_component_shape(walked, config) do
+    warn_stateful_mismatch(walked, config)
+
+    with :ok <- one_component_only(walked, config),
+         :ok <- no_dispatch_clauses(walked, config) do
+      no_reserved_attrs(walked, config)
+    end
+  end
+
+  # The `.exs` is what the consumer reads, so a source that says `use Phoenix.LiveComponent` while
+  # its config stays silent exports as an ordinary function component — the state it was written for
+  # quietly gone. Said out loud, because the alternative is a component that renders and does
+  # nothing.
+  defp warn_stateful_mismatch(%{live_component?: true}, config) do
+    case config[:stateful] == true do
+      true ->
+        :ok
+
+      false ->
+        IO.warn(
+          "#{config[:name]}: the source says `use Phoenix.LiveComponent` but its .exs does not " <>
+            "say `stateful: true`. The .exs is what the bundle carries, so this exports as a " <>
+            "function component and keeps no state.",
+          []
+        )
+    end
+  end
+
+  defp warn_stateful_mismatch(%{live_component?: false}, _config), do: :ok
+
+  defp one_component_only(%{public_defs: [_only]}, _config), do: :ok
+
+  defp one_component_only(%{public_defs: []}, config),
+    do: {:error, {:live_component_without_template, to_string(config[:name])}}
+
+  defp one_component_only(%{public_defs: defs}, config),
+    do:
+      {:error,
+       {:live_component_with_many_components, to_string(config[:name]), Enum.map(defs, & &1.name)}}
+
+  # Each clause of a dispatching component has its own root element, and a live component must have
+  # exactly one — `Phoenix.LiveView.Diff` raises otherwise.
+  defp no_dispatch_clauses(%{public_defs: defs}, config) do
+    case Enum.find(defs, &(Map.get(&1, :__extra_clauses__, []) != [])) do
+      nil ->
+        :ok
+
+      found ->
+        {:error,
+         {:live_component_dispatches_through_clauses, to_string(config[:name]), found.name}}
+    end
+  end
+
+  defp no_reserved_attrs(%{public_defs: defs}, config) do
+    defs
+    |> Enum.flat_map(&Map.get(&1, :attrs, []))
+    |> Enum.map(&to_string(&1.name))
+    |> Enum.filter(&(&1 in @reserved_stateful_attrs))
+    |> Enum.uniq()
+    |> case do
+      [] ->
+        :ok
+
+      taken ->
+        {:error, {:live_component_declares_reserved_attrs, to_string(config[:name]), taken}}
     end
   end
 
@@ -301,7 +393,8 @@ defmodule MishkaChelekom.CmsBundleExporter do
       pending_slots: [],
       pending_doc: nil,
       public_defs: [],
-      private_helpers: []
+      private_helpers: [],
+      live_component?: false
     }
 
     walked = Enum.reduce(nodes, init, &accumulate_node/2)
@@ -326,7 +419,8 @@ defmodule MishkaChelekom.CmsBundleExporter do
       pending_slots: [],
       pending_doc: nil,
       public_defs: [],
-      private_helpers: []
+      private_helpers: [],
+      live_component?: false
     }
 
   # `@doc """..."""` — held for the next public def, which harvests its
@@ -380,6 +474,7 @@ defmodule MishkaChelekom.CmsBundleExporter do
   defp accumulate_node({:use, _, args}, acc) do
     case parse_use(args) do
       {:tier1, _full} -> acc
+      {:live_component, _full} -> %{acc | live_component?: true}
       {:line, line} -> %{acc | prelude_lines: [line | acc.prelude_lines]}
       :skip -> acc
     end
@@ -575,17 +670,27 @@ defmodule MishkaChelekom.CmsBundleExporter do
 
   defp parse_use([{:__aliases__, _, parts}]) do
     full = Enum.map_join(parts, ".", &Atom.to_string/1)
-    if full in @tier1_use_modules, do: {:tier1, full}, else: {:line, "use #{full}"}
+
+    cond do
+      full == @live_component_use_module -> {:live_component, full}
+      full in @tier1_use_modules -> {:tier1, full}
+      true -> {:line, "use #{full}"}
+    end
   end
 
   defp parse_use([{:__aliases__, _, parts}, opts]) when is_list(opts) do
     full = Enum.map_join(parts, ".", &Atom.to_string/1)
 
-    if full in @tier1_use_modules do
-      {:tier1, full}
-    else
-      opts_str = opts |> Keyword.delete(:do) |> Macro.to_string()
-      {:line, "use #{full}, #{opts_str}"}
+    cond do
+      full == @live_component_use_module ->
+        {:live_component, full}
+
+      full in @tier1_use_modules ->
+        {:tier1, full}
+
+      true ->
+        opts_str = opts |> Keyword.delete(:do) |> Macro.to_string()
+        {:line, "use #{full}, #{opts_str}"}
     end
   end
 
@@ -1121,6 +1226,8 @@ defmodule MishkaChelekom.CmsBundleExporter do
     |> Map.put(:__scripts__, config[:scripts] || [])
     |> Map.put(:__required__, config[:required] == true)
     |> Map.put(:__precompile__, config[:precompile] == true)
+    |> Map.put(:__stateful__, config[:stateful] == true)
+    |> Map.put(:__live_component__, walked.live_component? or config[:stateful] == true)
     |> Map.put_new(:__extra_clauses__, [])
   end
 
@@ -1208,9 +1315,16 @@ defmodule MishkaChelekom.CmsBundleExporter do
   end
 
   defp slug_names(component, kit_name) do
-    slug = slug(component.name)
+    slug = slug(source_name(component))
     Map.put(component, :__slug_name__, "#{kit_name}-#{slug}")
   end
+
+  # A live component is named after its MODULE, not after the function carrying its `~H` — that
+  # function is `render/1` on every one of them, and a kit of them would ship as one
+  # `<kit>-render` row repeatedly upserted over itself by `identity :unique_name_per_site`. The
+  # `.exs`'s `name` is the module's own name and is already on the row.
+  defp source_name(%{__live_component__: true} = component), do: component.__component_filename__
+  defp source_name(component), do: component.name
 
   defp slug(name) do
     name
@@ -1339,6 +1453,10 @@ defmodule MishkaChelekom.CmsBundleExporter do
       # than named in markup is invisible to that walk, which is why it has to be said out loud.
       "required" => c.__required__,
       "precompile" => c.__precompile__,
+      # `stateful` makes the consumer compile the row as a `Phoenix.LiveComponent` instead of a
+      # function component: it gets an id, its own assigns, and `handle_event/3` aimed at it rather
+      # than at the page. Only the `.exs` can say so — see `check_live_component_shape/2`.
+      "stateful" => c.__stateful__,
       "examples" => [],
       "template" => c.template,
       "body" => c.body,

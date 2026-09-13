@@ -29,6 +29,8 @@ defmodule MishkaChelekom.CmsBundleExporterTest do
     widget_eex = File.read!(Path.join(@fixture_dir, "sample_widget.eex"))
     field_exs = File.read!(Path.join(@fixture_dir, "sample_field.exs"))
     field_eex = File.read!(Path.join(@fixture_dir, "sample_field.eex"))
+    live_exs = File.read!(Path.join(@fixture_dir, "sample_live_counter.exs"))
+    live_eex = File.read!(Path.join(@fixture_dir, "sample_live_counter.eex"))
 
     {:ok,
      button_exs: button_exs,
@@ -38,10 +40,19 @@ defmodule MishkaChelekom.CmsBundleExporterTest do
      widget_exs: widget_exs,
      widget_eex: widget_eex,
      field_exs: field_exs,
-     field_eex: field_eex}
+     field_eex: field_eex,
+     live_exs: live_exs,
+     live_eex: live_eex}
   end
 
   defp by_name(components, name), do: Enum.find(components, &(&1["name"] == name))
+
+  # A minimal `.exs` for the refusal cases, whose `.eex` is written inline beside each one.
+  defp live_exs(extra \\ "stateful: true") do
+    """
+    [sample_bad: [name: "sample_bad", category: "general", #{extra}, args: [], necessary: []]]
+    """
+  end
 
   defp all_wildcard_args?(args) do
     case String.split(args || "", " when ", parts: 2) do
@@ -532,6 +543,144 @@ defmodule MishkaChelekom.CmsBundleExporterTest do
       {:ok, a} = CmsBundleExporter.convert(e, t, "kit", "1.0")
       {:ok, b} = CmsBundleExporter.convert(e, t, "kit", "1.0")
       assert a == b
+    end
+  end
+
+  ## ─── Live components ───────────────────────────────────────────────
+
+  describe "convert/5 — a live component" do
+    test "the row says it is stateful", %{live_exs: e, live_eex: t} do
+      {:ok, %{components: cps}} = CmsBundleExporter.convert(e, t, "kit", "1.0")
+
+      assert [component] = cps
+      assert component["stateful"] == true
+    end
+
+    # `render/1` is the ~H-bearing function on EVERY live component, so naming the row after it
+    # would ship a kit of them as one `kit-render` repeatedly upserted over itself.
+    test "is named after the .exs, not after render/1", %{live_exs: e, live_eex: t} do
+      {:ok, %{components: cps}} = CmsBundleExporter.convert(e, t, "kit", "1.0")
+
+      assert by_name(cps, "kit-sample-live-counter")
+      refute by_name(cps, "kit-render")
+    end
+
+    # The consuming CMS emits `use <Web>, :live_component` itself. This line spliced into the
+    # prelude would land in a module that already said that.
+    test "`use Phoenix.LiveComponent` never reaches the prelude", %{live_exs: e, live_eex: t} do
+      {:ok, %{components: cps}} = CmsBundleExporter.convert(e, t, "kit", "1.0")
+
+      assert [component] = cps
+      refute to_string(component["extra"]["prelude"]) =~ "Phoenix.LiveComponent"
+    end
+
+    test "its callbacks ride helpers, where the CMS looks for them", %{live_exs: e, live_eex: t} do
+      {:ok, %{components: cps}} = CmsBundleExporter.convert(e, t, "kit", "1.0")
+
+      assert [component] = cps
+      names = Enum.map(component["helpers"], & &1["name"])
+
+      assert "mount" in names
+      assert "handle_event" in names
+      assert "counter_class" in names
+    end
+
+    test "the template and its declared attrs survive", %{live_exs: e, live_eex: t} do
+      {:ok, %{components: cps}} = CmsBundleExporter.convert(e, t, "kit", "1.0")
+
+      assert [component] = cps
+      assert component["template"] =~ "phx-target={@myself}"
+      assert Enum.find(component["attrs"], &(&1["name"] == "step"))["opts"]["default"] == 1
+    end
+
+    test "a function component is not stateful by omission", %{button_exs: e, button_eex: t} do
+      {:ok, %{components: cps}} = CmsBundleExporter.convert(e, t, "kit", "1.0")
+
+      assert Enum.all?(cps, &(&1["stateful"] == false))
+    end
+  end
+
+  describe "convert/5 — shapes a live component cannot have" do
+    test "two public components in one file" do
+      eex = """
+      defmodule <%= @module %> do
+        use Phoenix.LiveComponent
+
+        def render(assigns), do: ~H"<div>one</div>"
+        def other(assigns), do: ~H"<div>two</div>"
+      end
+      """
+
+      assert {:error, {:live_component_with_many_components, "sample_bad", names}} =
+               CmsBundleExporter.convert(live_exs(), eex, "kit", "1.0")
+
+      assert "render" in names and "other" in names
+    end
+
+    test "a dispatching def with several clauses" do
+      eex = """
+      defmodule <%= @module %> do
+        use Phoenix.LiveComponent
+
+        def render(%{size: "small"} = assigns), do: ~H"<div>small</div>"
+        def render(assigns), do: ~H"<div>big</div>"
+      end
+      """
+
+      assert {:error, {:live_component_dispatches_through_clauses, "sample_bad", "render"}} =
+               CmsBundleExporter.convert(live_exs(), eex, "kit", "1.0")
+    end
+
+    test "an attr LiveView assigns itself" do
+      eex = """
+      defmodule <%= @module %> do
+        use Phoenix.LiveComponent
+
+        attr :uploads, :map, default: %{}
+        def render(assigns), do: ~H"<div>up</div>"
+      end
+      """
+
+      assert {:error, {:live_component_declares_reserved_attrs, "sample_bad", ["uploads"]}} =
+               CmsBundleExporter.convert(live_exs(), eex, "kit", "1.0")
+    end
+
+    test "no component at all" do
+      eex = """
+      defmodule <%= @module %> do
+        use Phoenix.LiveComponent
+
+        def mount(socket), do: {:ok, socket}
+      end
+      """
+
+      assert {:error, {:live_component_without_template, "sample_bad"}} =
+               CmsBundleExporter.convert(live_exs(), eex, "kit", "1.0")
+    end
+
+    # The .exs is what the bundle carries, so a source that says live while its config stays silent
+    # exports as an ordinary function component — with the state it was written for gone.
+    test "a source that says live while its .exs does not is warned about, and still exports" do
+      eex = """
+      defmodule <%= @module %> do
+        use Phoenix.LiveComponent
+
+        def render(assigns), do: ~H"<div>quiet</div>"
+      end
+      """
+
+      warning =
+        ExUnit.CaptureIO.capture_io(:stderr, fn ->
+          assert {:ok, %{components: [component]}} =
+                   CmsBundleExporter.convert(live_exs("doc_url: \"internal\""), eex, "kit", "1.0")
+
+          send(self(), {:component, component})
+        end)
+
+      assert warning =~ "stateful: true"
+      assert_received {:component, component}
+      assert component["stateful"] == false
+      assert component["name"] == "kit-sample-bad"
     end
   end
 
