@@ -40811,6 +40811,30 @@
         ],
         "function": "filterable_gallery",
         "furnishing": {
+          "attrs": {
+            "filters": [
+              "Branding",
+              "Web design",
+              "Print"
+            ],
+            "media": [
+              {
+                ":alt": "Rebrand for Parsian Retail",
+                ":category": "Branding",
+                ":src": "/images/card-1.jpg"
+              },
+              {
+                ":alt": "Booking flow for Alborz Travel",
+                ":category": "Web design",
+                ":src": "/images/card-2.jpg"
+              },
+              {
+                ":alt": "Autumn catalogue spread",
+                ":category": "Print",
+                ":src": "/images/card-3.jpg"
+              }
+            ]
+          },
           "body": "",
           "slots": []
         },
