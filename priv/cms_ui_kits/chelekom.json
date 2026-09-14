@@ -174910,9 +174910,25 @@
                 "required": true
               },
               "type": "integer"
+            },
+            {
+              "name": "active",
+              "opts": {
+                "default": 1,
+                "doc": "Index of the slide showing, counted from one"
+              },
+              "type": "integer"
+            },
+            {
+              "name": "active_class",
+              "opts": {
+                "default": "active-indicator",
+                "doc": "CSS class for the active one"
+              },
+              "type": "string"
             }
           ],
-          "code": "~H\"\"\"\n<div\n  id={\"#{@id}-carousel-slide-indicator\"}\n  class={[\n    \"absolute inset-x-0 bottom-0 z-10 flex justify-center gap-3 py-2.5\",\n    \"[&>.carousel-indicator]:h-1 [&>.carousel-indicator]:w-6 [&>.carousel-indicator]:bg-white\",\n    \"[&>.carousel-indicator.active-indicator]:opacity-100\",\n    \"[&>.carousel-indicator]:opacity-40 [&>.carousel-indicator]:transition-all\",\n    \"[&>.carousel-indicator]:duration-500 [&>.carousel-indicator]:ease-in-out shadow\"\n  ]}\n>\n  <button\n    :for={indicator_item <- 1..@count//1}\n    id={\"#{@id}-carousel-indicator-#{indicator_item}\"}\n    data-indicator-index={\"#{indicator_item}\"}\n    class=\"carousel-indicator\"\n    aria-label={gettext(\"Go to slide %{index}\", index: indicator_item)}\n  />\n</div>\n\"\"\"",
+          "code": "~H\"\"\"\n<div\n  id={\"#{@id}-carousel-slide-indicator\"}\n  class={[\n    \"absolute inset-x-0 bottom-0 z-10 flex justify-center gap-3 py-2.5\",\n    \"[&>.carousel-indicator]:h-1 [&>.carousel-indicator]:w-6 [&>.carousel-indicator]:bg-white\",\n    \"[&>.carousel-indicator.active-indicator]:opacity-100\",\n    \"[&>.carousel-indicator]:opacity-40 [&>.carousel-indicator]:transition-all\",\n    \"[&>.carousel-indicator]:duration-500 [&>.carousel-indicator]:ease-in-out shadow\"\n  ]}\n>\n  <button\n    :for={indicator_item <- 1..@count//1}\n    id={\"#{@id}-carousel-indicator-#{indicator_item}\"}\n    data-indicator-index={\"#{indicator_item}\"}\n    class={[\"carousel-indicator\", indicator_item == @active && @active_class]}\n    aria-label={gettext(\"Go to slide %{index}\", index: indicator_item)}\n  />\n</div>\n\"\"\"",
           "discriminators": [],
           "name": "slide_indicators",
           "slots": []
@@ -175507,7 +175523,7 @@
         }
       ],
       "stateful": false,
-      "template": "<div\n  id={@id}\n  phx-hook=\"GlobalChelekomCarousel\"\n  phx-update=\"ignore\"\n  data-active-index={@active_index + 1}\n  data-autoplay={to_string(@autoplay)}\n  data-autoplay-interval={@autoplay_interval}\n  data-active-slide-class={@active_slide_class}\n  data-hidden-slide-class={@hidden_slide_class}\n  data-active-indicator-class={@active_indicator_class}\n  class={[\n    \"relative w-full overflow-hidden\",\n    \"[&_.slide:not(.active-slide)]:absolute [&_.slide]:inset-0 [&_.slide]:opacity-0 [&_.slide.active-slide]:opacity-100 [&_.slide:not(.active-slide)]:pointer-events-none [&_.slide:not(.active-slide)]:z-0\",\n    \"[&_.slide.active-slide]:z-10\",\n    \"[&_.slide]:transition-opacity [&_.slide]:delay-[50ms] [&_.slide]:duration-[700ms] [&_.slide]:ease-in-out\",\n    text_position(@text_position),\n    padding_size(@padding),\n    color_class(@overlay),\n    size_class(@size),\n    @class\n  ]}\n>\n  <button\n    :if={@control}\n    id={\"#{@id}-carousel-prev\"}\n    class=\"absolute left-0 inset-y-0 z-20 p-4 bg-black/10 hover:bg-black/30 transition focus:outline-none\"\n  >\n    <.component component_name=\"chelekom-icon\" site={assigns[:site]} name=\"hero-chevron-left\" class=\"size-7 text-white\" />\n  </button>\n\n  <button\n    :if={@control}\n    id={\"#{@id}-carousel-next\"}\n    class=\"absolute right-0 inset-y-0 z-20 p-4 bg-black/10 hover:bg-black/30 transition focus:outline-none\"\n  >\n    <.component component_name=\"chelekom-icon\" site={assigns[:site]} name=\"hero-chevron-right\" class=\"size-7 text-white\" />\n  </button>\n\n  <div\n    :for={{slide, index} <- Enum.with_index(@slide, 1)}\n    id={\"#{@id}-carousel-slide-#{index}\"}\n    class={[\"slide h-full\", slide[:class]]}\n    aria-hidden={@activated_carousel + 1 != index}\n  >\n    <div class=\"relative w-full h-full\">\n      <.slide_image id={@id} index={index} {slide}>\n        <.slide_content id={@id} index={index} {slide} />\n      </.slide_image>\n    </div>\n  </div>\n\n  <.slide_indicators :if={@indicator} id={@id} count={length(@slide)} />\n</div>\n",
+      "template": "<div\n  id={@id}\n  phx-hook=\"GlobalChelekomCarousel\"\n  phx-update=\"ignore\"\n  data-active-index={@active_index + 1}\n  data-autoplay={to_string(@autoplay)}\n  data-autoplay-interval={@autoplay_interval}\n  data-active-slide-class={@active_slide_class}\n  data-hidden-slide-class={@hidden_slide_class}\n  data-active-indicator-class={@active_indicator_class}\n  class={[\n    \"relative w-full overflow-hidden\",\n    \"[&_.slide:not(.active-slide)]:absolute [&_.slide]:inset-0 [&_.slide]:opacity-0 [&_.slide.active-slide]:opacity-100 [&_.slide:not(.active-slide)]:pointer-events-none [&_.slide:not(.active-slide)]:z-0\",\n    \"[&_.slide.active-slide]:z-10\",\n    \"[&_.slide]:transition-opacity [&_.slide]:delay-[50ms] [&_.slide]:duration-[700ms] [&_.slide]:ease-in-out\",\n    text_position(@text_position),\n    padding_size(@padding),\n    color_class(@overlay),\n    size_class(@size),\n    @class\n  ]}\n>\n  <button\n    :if={@control}\n    id={\"#{@id}-carousel-prev\"}\n    class=\"absolute left-0 inset-y-0 z-20 p-4 bg-black/10 hover:bg-black/30 transition focus:outline-none\"\n  >\n    <.component component_name=\"chelekom-icon\" site={assigns[:site]} name=\"hero-chevron-left\" class=\"size-7 text-white\" />\n  </button>\n\n  <button\n    :if={@control}\n    id={\"#{@id}-carousel-next\"}\n    class=\"absolute right-0 inset-y-0 z-20 p-4 bg-black/10 hover:bg-black/30 transition focus:outline-none\"\n  >\n    <.component component_name=\"chelekom-icon\" site={assigns[:site]} name=\"hero-chevron-right\" class=\"size-7 text-white\" />\n  </button>\n\n  <div\n    :for={{slide, index} <- Enum.with_index(@slide, 1)}\n    id={\"#{@id}-carousel-slide-#{index}\"}\n    class={[\n      \"slide h-full\",\n      @activated_carousel + 1 == index && @active_slide_class,\n      slide[:class]\n    ]}\n    aria-hidden={@activated_carousel + 1 != index}\n  >\n    <div class=\"relative w-full h-full\">\n      <.slide_image id={@id} index={index} {slide}>\n        <.slide_content id={@id} index={index} {slide} />\n      </.slide_image>\n    </div>\n  </div>\n\n  <.slide_indicators\n    :if={@indicator}\n    id={@id}\n    count={length(@slide)}\n    active={@activated_carousel + 1}\n    active_class={@active_indicator_class}\n  />\n</div>\n",
       "type": "media"
     },
     {
