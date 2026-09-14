@@ -167,7 +167,11 @@ defmodule DevelopmentWeb.Components.Carousel do
       <div
         :for={{slide, index} <- Enum.with_index(@slide, 1)}
         id={"#{@id}-carousel-slide-#{index}"}
-        class={["slide h-full", slide[:class]]}
+        class={[
+          "slide h-full",
+          @activated_carousel + 1 == index && @active_slide_class,
+          slide[:class]
+        ]}
         aria-hidden={@activated_carousel + 1 != index}
       >
         <div class="relative w-full h-full">
@@ -177,7 +181,13 @@ defmodule DevelopmentWeb.Components.Carousel do
         </div>
       </div>
 
-      <.slide_indicators :if={@indicator} id={@id} count={length(@slide)} />
+      <.slide_indicators
+        :if={@indicator}
+        id={@id}
+        count={length(@slide)}
+        active={@activated_carousel + 1}
+        active_class={@active_indicator_class}
+      />
     </div>
     """
   end
@@ -291,6 +301,8 @@ defmodule DevelopmentWeb.Components.Carousel do
     doc: "A unique identifier is used to manage state and interaction"
 
   attr :count, :integer, required: true, doc: "Count of items"
+  attr :active, :integer, default: 1, doc: "Index of the slide showing, counted from one"
+  attr :active_class, :string, default: "active-indicator", doc: "CSS class for the active one"
 
   defp slide_indicators(assigns) do
     ~H"""
@@ -308,7 +320,7 @@ defmodule DevelopmentWeb.Components.Carousel do
         :for={indicator_item <- 1..@count//1}
         id={"#{@id}-carousel-indicator-#{indicator_item}"}
         data-indicator-index={"#{indicator_item}"}
-        class="carousel-indicator"
+        class={["carousel-indicator", indicator_item == @active && @active_class]}
         aria-label={gettext("Go to slide %{index}", index: indicator_item)}
       />
     </div>

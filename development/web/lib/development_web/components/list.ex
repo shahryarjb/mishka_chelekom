@@ -62,7 +62,11 @@ defmodule DevelopmentWeb.Components.List do
   attr :variant, :string, default: "transparent", doc: "Determines the style"
   attr :rounded, :string, default: "small", doc: "Determines the border radius"
   attr :hoverable, :boolean, default: false, doc: "active hover style"
-  attr :style, :string, default: "list-none", doc: ""
+
+  attr :style, :string,
+    default: "list-none",
+    values: ["list-none", "list-disc", "list-decimal"],
+    doc: "The marker beside each item: none, a bullet, or a number"
 
   slot :item, validate_attrs: false do
     attr :id, :string, doc: "A unique identifier is used to manage state and interaction"
@@ -212,7 +216,12 @@ defmodule DevelopmentWeb.Components.List do
 
   attr :width, :string, default: "full", doc: "Determines the element width"
   attr :border, :string, default: "extra_small", doc: "Border size"
-  attr :style, :string, default: "list-none", doc: "Determines the element style"
+
+  attr :style, :string,
+    default: "list-none",
+    values: ["list-none", "list-disc", "list-decimal"],
+    doc: "The marker beside each item: none, a bullet, or a number"
+
   attr :rounded, :string, default: "small", doc: "Determines the border radius"
   attr :class, :any, default: nil, doc: "Custom CSS class for additional styling"
   attr :hoverable, :boolean, default: false, doc: "active hover style"
@@ -283,6 +292,12 @@ defmodule DevelopmentWeb.Components.List do
   attr :width, :string, default: "full", doc: "Determines the element width"
   attr :border, :string, default: "extra_small", doc: "Border size"
   attr :rounded, :string, default: "small", doc: "Determines the border radius"
+
+  attr :style, :string,
+    default: "list-decimal",
+    values: ["list-none", "list-disc", "list-decimal"],
+    doc: "The marker beside each item: none, a bullet, or a number"
+
   attr :class, :any, default: nil, doc: "Custom CSS class for additional styling"
   attr :space, :string, default: "", doc: "Space between items"
   attr :hoverable, :boolean, default: false, doc: "active hover style"
@@ -302,7 +317,8 @@ defmodule DevelopmentWeb.Components.List do
     <ol
       id={@id}
       class={[
-        "list-decimal [&.list-decimal]:ps-5 [&.list-disc]:ps-5",
+        @style,
+        "[&.list-decimal]:ps-5 [&.list-disc]:ps-5",
         color_variant(@variant, @color, @hoverable),
         border_class(@border, @variant),
         size_class(@size),
