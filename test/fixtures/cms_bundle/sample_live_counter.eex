@@ -1,0 +1,31 @@
+defmodule <%= @module %> do
+  use Phoenix.LiveComponent
+
+  attr :id, :string, required: true
+  attr :size, :string, default: "small"
+  attr :step, :integer, default: 1
+  attr :rest, :global
+
+  @impl true
+  def mount(socket) do
+    {:ok, assign(socket, :count, 0)}
+  end
+
+  @impl true
+  def handle_event("bump", _params, socket) do
+    {:noreply, assign(socket, :count, socket.assigns.count + socket.assigns.step)}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div id={@id} class={[@size, counter_class(@count)]} {@rest}>
+      <span>{@count}</span>
+      <button type="button" phx-click="bump" phx-target={@myself}>Bump</button>
+    </div>
+    """
+  end
+
+  defp counter_class(count) when count > 0, do: "text-emerald-600"
+  defp counter_class(_count), do: "text-zinc-500"
+end

@@ -94,12 +94,13 @@ defmodule Mix.Tasks.Mishka.Ui.Export do
 
   ## What a component's `.exs` can say to the consuming CMS
 
-  Beside `necessary` — which names the OTHER components this one draws through — two keys describe
-  what the CMS must do with this component itself. Both are optional and both default to `false`, so
-  a `.exs` written before they existed keeps its meaning exactly.
+  Beside `necessary` — which names the OTHER components this one draws through — three keys describe
+  what the CMS must do with this component itself. All are optional and all default to `false`, so a
+  `.exs` written before they existed keeps its meaning exactly.
 
       required: true     # the CMS cannot run without it; its installer may not let it be deselected
       precompile: true   # build its CSS whether or not a page names it
+      stateful: true     # install it as a Phoenix.LiveComponent, not a function component
 
   `precompile` exists because a consuming CMS builds a site's stylesheet from the components its
   pages REFERENCE, and a component reached through helper code or the host's own markup is invisible
@@ -107,6 +108,24 @@ defmodule Mix.Tasks.Mishka.Ui.Export do
 
   `priv/components/icon.exs` is the example: 49 of this kit's components declare it `necessary`, so
   deselecting it would leave a third of the kit unable to draw.
+
+  ## Shipping a live component
+
+  A `stateful` component gets an id, assigns of its own that survive the hosting page's re-renders,
+  and `handle_event/3` aimed at itself rather than at the page. Write its `.eex` as a
+  `Phoenix.LiveComponent` module — one `render/1` carrying the `~H`, with `mount/1`, `update/2` and
+  `handle_event/3` beside it — and the exporter names the row after the `.exs`'s own `name` instead
+  of after `render`, which every one of them would otherwise be called.
+
+  Three shapes the exporter refuses, because the consuming CMS refuses them too:
+
+    * more than one public component in the file — a live component IS its module
+    * a dispatching `def` with several clauses — each clause has its own root element, and a live
+      component may have exactly one
+    * an `attr` named `uploads`, `streams`, `socket` or `myself` — LiveView assigns those itself
+
+  Say it in the `.exs`. `use Phoenix.LiveComponent` in the `.eex` on its own is a warning and not a
+  declaration: the bundle carries what the config says.
   """
 
   use Igniter.Mix.Task

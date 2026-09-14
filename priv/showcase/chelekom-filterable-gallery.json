@@ -2,7 +2,31 @@
   "name": "chelekom-filterable-gallery",
   "furnishing": {
     "body": "",
-    "slots": []
+    "slots": [],
+    "attrs": {
+      "filters": [
+        "Branding",
+        "Web design",
+        "Print"
+      ],
+      "media": [
+        {
+          ":src": "/images/card-1.jpg",
+          ":alt": "Rebrand for Parsian Retail",
+          ":category": "Branding"
+        },
+        {
+          ":src": "/images/card-2.jpg",
+          ":alt": "Booking flow for Alborz Travel",
+          ":category": "Web design"
+        },
+        {
+          ":src": "/images/card-3.jpg",
+          ":alt": "Autumn catalogue spread",
+          ":category": "Print"
+        }
+      ]
+    }
   },
   "examples": [
     {
