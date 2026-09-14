@@ -170659,7 +170659,7 @@
           "name": "color",
           "opts": {
             "default": "natural",
-            "doc": "Determines color theme",
+            "doc": "Determines color theme. Paints every step inside it — a section says which STATE it is in",
             "values": [
               "base",
               "natural",
@@ -172323,6 +172323,7 @@
           "name": "step",
           "opts": {
             "default": "none",
+            "doc": "Which state this step is in. The colour comes from the parent stepper's color and variant; this picks which of them applies here",
             "values": [
               "none",
               "current",
@@ -172361,7 +172362,8 @@
         {
           "name": "step_number",
           "opts": {
-            "default": 1
+            "default": 1,
+            "doc": "The number drawn in the circle, unless the step is completed and shows a tick instead"
           },
           "type": "integer"
         },
