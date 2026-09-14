@@ -2,7 +2,11 @@
   "name": "chelekom-gallery",
   "furnishing": {
     "body": "<.component component_name=\"chelekom-gallery-media\" site=\"Global\" src=\"/images/card-1.jpg\" alt=\"A workshop bench seen from above\" />\n<.component component_name=\"chelekom-gallery-media\" site=\"Global\" src=\"/images/card-2.jpg\" alt=\"Morning light across a studio wall\" />\n<.component component_name=\"chelekom-gallery-media\" site=\"Global\" src=\"/images/card-3.jpg\" alt=\"A notebook open on a desk\" />\n<.component component_name=\"chelekom-gallery-media\" site=\"Global\" src=\"/images/card-4.jpg\" alt=\"Shelves of finished pieces\" />",
-    "slots": []
+    "slots": [],
+    "attrs": {
+      "cols": "three",
+      "gap": "medium"
+    }
   },
   "examples": [
     {

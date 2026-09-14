@@ -38954,6 +38954,10 @@
         ],
         "function": "gallery",
         "furnishing": {
+          "attrs": {
+            "cols": "three",
+            "gap": "medium"
+          },
           "body": "<.component component_name=\"chelekom-gallery-media\" site=\"Global\" src=\"/images/card-1.jpg\" alt=\"A workshop bench seen from above\" />\n<.component component_name=\"chelekom-gallery-media\" site=\"Global\" src=\"/images/card-2.jpg\" alt=\"Morning light across a studio wall\" />\n<.component component_name=\"chelekom-gallery-media\" site=\"Global\" src=\"/images/card-3.jpg\" alt=\"A notebook open on a desk\" />\n<.component component_name=\"chelekom-gallery-media\" site=\"Global\" src=\"/images/card-4.jpg\" alt=\"Shelves of finished pieces\" />",
           "slots": []
         },
@@ -39821,7 +39825,7 @@
         ],
         "function": "gallery_media",
         "furnishing": {
-          "body": "<div class=\"flex aspect-video w-full items-center justify-center rounded bg-neutral-100 text-sm text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400\">Pick an image for this tile</div>",
+          "body": "",
           "slots": []
         },
         "module_attributes": [],
