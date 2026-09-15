@@ -440,7 +440,7 @@ defmodule MishkaChelekom.Test.Runtime.DemoHarness do
     prefix = kit_name <> "-"
 
     case full_name do
-      <<^prefix::binary-size(byte_size(prefix)), rest::binary>> -> rest
+      ^prefix <> rest -> rest
       _ -> full_name
     end
   end
@@ -507,8 +507,6 @@ defmodule MishkaChelekom.Test.Runtime.DemoHarness do
       true -> :fail
     end
   end
-
-  defp classify(_), do: :fail
 
   defp build_failure(component, example, reason) do
     %{
