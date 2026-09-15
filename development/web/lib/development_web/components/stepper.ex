@@ -46,7 +46,12 @@ defmodule DevelopmentWeb.Components.Stepper do
       "Determines the overall size of the elements, including padding, font size, and other items"
 
   attr :margin, :string, default: "medium", doc: "Determines the element margin"
-  attr :color, :string, default: "natural", doc: "Determines color theme"
+
+  attr :color, :string,
+    default: "natural",
+    doc:
+      "Determines color theme. Paints every step inside it — a section says which STATE it is in"
+
   attr :space, :string, default: "", doc: "Space between stepper items in vertical layout"
   attr :border, :string, default: "extra_small", doc: "Determines border style"
 
@@ -177,12 +182,18 @@ defmodule DevelopmentWeb.Components.Stepper do
 
   attr :step, :string,
     values: ["none", "current", "loading", "completed", "canceled"],
-    default: "none"
+    default: "none",
+    doc:
+      "Which state this step is in. The colour comes from the parent stepper's color and variant; this picks which of them applies here"
 
   attr :icon, :string, default: nil, doc: "Icon displayed alongside of an item"
   attr :title, :string, default: nil, doc: "Specifies the title of the element"
   attr :description, :string, default: nil, doc: "Determines a short description"
-  attr :step_number, :integer, default: 1
+
+  attr :step_number, :integer,
+    default: 1,
+    doc: "The number drawn in the circle, unless the step is completed and shows a tick instead"
+
   attr :vertical, :boolean, default: false, doc: "Determines whether element is vertical"
 
   attr :clickable, :boolean,

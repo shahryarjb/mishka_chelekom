@@ -149,8 +149,8 @@ defmodule DevelopmentWeb.Components.TableContent do
             name={item[:icon]}
             class={["content-icon me-2 inline-block", item[:icon_class]]}
           />
-          <.link :if={item[:link_title] && item[:link]} patch={item[:link]} class={item[:link_class]}>
-            {item[:link_title]}
+          <.link :if={item[:link]} href={item[:link]} class={item[:link_class]}>
+            {item[:link_title] || item[:link]}
           </.link>
           <div class={item[:content_class]}>
             {render_slot(item)}
@@ -300,7 +300,7 @@ defmodule DevelopmentWeb.Components.TableContent do
           name={@icon}
           class={["content-icon me-2 inline-block", @icon_class]}
         />
-        <.link :if={@link_title && @link} patch={@link} class={@link_class}>{@link_title}</.link>
+        <.link :if={@link} href={@link} class={@link_class}>{@link_title || @link}</.link>
         <div class={@content_class}>
           {render_slot(@inner_block)}
         </div>
