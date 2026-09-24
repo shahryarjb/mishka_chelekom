@@ -56,6 +56,10 @@ defmodule MishkaChelekom.Generators.AssetsNpmTest do
     Enum.any?(igniter.tasks, fn {task, _argv} -> task == "mishka.assets.install" end)
   end
 
+  # The one real catalog read here: a multi-engine component is only as correct as the data that
+  # names each engine's packages, and that data lives in the catalog, not in this file.
+  defp chart_catalog, do: Config.Reader.read!("priv/headless/chart.exs")[:chart]
+
   describe "npm packages declared by a catalog" do
     test "creates package.json with the exact pins and queues the install" do
       igniter =
@@ -151,6 +155,46 @@ defmodule MishkaChelekom.Generators.AssetsNpmTest do
 
       assert deps["@tiptap/core"] == "3.28.0"
       refute Map.has_key?(deps, "nope")
+    end
+  end
+
+  describe "an engine with several packages (chart --lib tanstack)" do
+    test "pins TanStack with the d3 helpers it shares, and installs its engine as chart.js" do
+      igniter = project_with_assets() |> Assets.wire_scripts(chart_catalog(), lib: "tanstack")
+      deps = package_json(igniter)["dependencies"]
+
+      assert deps["@tanstack/charts"] == "0.18.0"
+      assert deps["d3-scale"] == "4.0.2"
+      assert deps["d3-shape"] == "3.2.0"
+      refute Map.has_key?(deps, "echarts"), "only the chosen engine's packages are installed"
+
+      assert source_content(igniter, "assets/vendor/chart.js") =~ ~s(from "@tanstack/charts/dom"),
+             "every engine installs under ONE name, so the markup's Chart hook finds whichever ran"
+
+      assert source_content(igniter, "assets/vendor/chart_extensions.js") =~ "THIS FILE IS YOURS"
+    end
+
+    test "switching to another engine prunes every package this one brought" do
+      manifest =
+        Jason.encode!(%{
+          "dependencies" => %{
+            "@tanstack/charts" => "0.18.0",
+            "d3-scale" => "4.0.2",
+            "d3-shape" => "3.2.0"
+          }
+        })
+
+      igniter =
+        project_with_assets(%{"assets/package.json" => manifest})
+        |> Assets.wire_scripts(chart_catalog(), lib: "billboard")
+
+      deps = package_json(igniter)["dependencies"]
+
+      assert deps["billboard.js"] == "4.0.3"
+
+      for package <- ~w(@tanstack/charts d3-scale d3-shape) do
+        refute Map.has_key?(deps, package), "#{package} was stranded by the engine switch"
+      end
     end
   end
 

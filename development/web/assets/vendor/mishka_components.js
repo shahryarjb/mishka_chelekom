@@ -48,6 +48,7 @@ import EditorLexical from "./editor_lexical.js";
 import EditorMilkDown from "./editor_milk_down.js";
 import EditorCodeMirror from "./editor_code_mirror.js";
 import Chart from "./chart.js";
+import ChartTanstack from "./chart_tanstack.js";
 import Autosize from "./autosize.js";
 import Countdown from "./countdown.js";
 import ThemeController from "./theme_controller.js";
@@ -105,6 +106,7 @@ const Components = {
   EditorMilkDown,
   EditorCodeMirror,
   Chart,
+  ChartTanstack,
   Autosize,
   Countdown,
   ThemeController,

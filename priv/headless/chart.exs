@@ -21,7 +21,8 @@
       note:
         "The default engine, Apache ECharts, is Apache-2.0 — the same license as this project. The " <>
           "other engines are permissive too: Chart.js is MIT, billboard.js is MIT (it pulls the " <>
-          "d3-* modules, which are ISC/BSD). ApexCharts is deliberately NOT offered: every release " <>
+          "d3-* modules, which are ISC/BSD), TanStack Charts is MIT (with d3-scale and d3-shape, " <>
+          "both ISC). ApexCharts is deliberately NOT offered: every release " <>
           "after 5.0.0 relicensed to a proprietary dual-license (free only under a revenue cap), " <>
           "which is incompatible with an Apache-2.0 project and is rejected by the catalog tests."
     ],
@@ -29,8 +30,9 @@
     # Multi-engine shape, exactly like the editor. There is ONE <.chart> markup, ONE hook name
     # (Chart) and ONE installed file (chart.js); the only thing --engine changes is which engine
     # file is copied and which npm package is installed. Every entry MUST register the same hook
-    # module (asserted by the catalog-integrity test) so the template never branches. Adding a
-    # fourth engine is this data plus one file — no change to the component's markup or public API.
+    # module (asserted by the catalog-integrity test) so the template never branches. Adding an
+    # engine is this data plus one file — no change to the component's markup or public API (that is
+    # exactly how `tanstack` was added).
     libs: [
       echarts: [
         default: true,
@@ -66,6 +68,26 @@
             module: "Chart",
             type: "file",
             file: "chart_billboard.js",
+            as: "chart.js",
+            imports: "import Chart from \"./chart.js\";"
+          }
+        ]
+      ],
+      # TanStack Charts' framework-agnostic core (`mountChart` from `@tanstack/charts/dom`). Its
+      # grammar is function calls, so the engine file translates a JSON spec into them. d3-scale
+      # (time/log/pow scales) and d3-shape (named curves) are pinned to the SAME versions
+      # @tanstack/charts pins itself, so npm dedupes them to one copy instead of bundling two.
+      tanstack: [
+        npm: [
+          %{name: "@tanstack/charts", version: "0.18.0"},
+          %{name: "d3-scale", version: "4.0.2"},
+          %{name: "d3-shape", version: "3.2.0"}
+        ],
+        scripts: [
+          %{
+            module: "Chart",
+            type: "file",
+            file: "chart_tanstack.js",
             as: "chart.js",
             imports: "import Chart from \"./chart.js\";"
           }
@@ -120,7 +142,11 @@
         keyboard: [
           "Charts are non-interactive by default (role=img)",
           "Give every chart an aria_label; the engine's own data is invisible to a screen reader",
-          "For ECharts you can additionally set its `aria` option for a generated description"
+          "For ECharts you can additionally set its `aria` option for a generated description",
+          "With --lib tanstack the chart IS interactive: the hook moves the accessible name onto " <>
+            "the SVG it renders (and drops role=img from the surface, which would hide that " <>
+            "content). Tab focuses the first point, Arrow keys / Home / End move between points, " <>
+            "Enter or Space pins the tooltip and fires on_click, Escape dismisses it"
         ]
       ],
       state_attributes: ["data-empty"],

@@ -4,8 +4,8 @@
 // `mix mishka.ui.gen.headless chart` being run again. (The engine next to it, chart_*.js, IS
 // regenerated — never edit that one.)
 //
-// Every engine (ECharts, Chart.js, billboard.js) reads this same shape, so switching engines does
-// not mean re-learning this file.
+// Every engine (ECharts, Chart.js, billboard.js, TanStack Charts) reads this same shape, so
+// switching engines does not mean re-learning this file.
 //
 //   palette     Fallback series colors, used only when the CSS custom properties --chart-1..8 are
 //               NOT defined on the page. Prefer the CSS vars (they theme with light/dark for free);
@@ -19,6 +19,11 @@
 //   billboard   Engine-specific knobs. `injectStyles: false` opts out of the compact stylesheet the
 //               billboard engine injects (set it if you import billboard.js/dist/billboard.css
 //               yourself).
+//
+//   tanstack    Engine-specific knobs. `animate: false` turns off the keyed enter/update/exit
+//               animation the TanStack engine enables by default (an option's own `svgAnimation`
+//               still wins). `tooltip: true` (or a tooltip map) gives every chart that does not set
+//               its own `tooltip` one.
 
 export default {
   palette: [],
@@ -28,5 +33,8 @@ export default {
   },
   billboard: {
     injectStyles: true,
+  },
+  tanstack: {
+    animate: true,
   },
 };

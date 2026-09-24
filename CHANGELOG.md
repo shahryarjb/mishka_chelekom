@@ -1,6 +1,15 @@
 # Changelog for MishkaChelekom 0.0.10
 
 ### Features:
+- Add a fourth `Chart` engine, TanStack Charts (`mix mishka.ui.gen.headless chart --lib tanstack`),
+  over its framework-agnostic core. TanStack is a grammar of function calls, so the engine takes
+  that grammar spelled as data — marks, scales and curves by name, rows as plain maps — with the x/y
+  scales inferred when left out, ISO date strings parsed for time axes, and the `chelekom:*`
+  formatter and fade sentinels working as they do on the other engines. Its SVG reads the
+  `--chart-*` properties directly (a theme toggle recolors it with no redraw), a push animates to
+  the new values, and the chart is keyboard-navigable. `@tanstack/charts` is MIT; the `d3-scale`
+  and `d3-shape` it needs are pinned to the versions it pins itself, so they install once. Nothing
+  changes in the component's markup or attributes
 - The CMS bundle carries each attribute's own option list. A component's `args:` config already
   enumerates what `variant`, `color`, `size`, `rounded` and `padding` accept, and the exporter threw
   it away — a consumer had to recover the same lists from the `<%= if %>` gating around each helper
@@ -32,6 +41,7 @@
   swapping one element for another
 
 ### Bug fixes:
+- The `chart` docs told you to pick an engine with `--engine`; the flag is `--lib`
 - The headless `radio_group` never went horizontal. Its root hardcoded `data-orientation="vertical"`
   while the JS engine was already reading that attribute to decide which arrow keys move the
   selection, so the option was unreachable: there is an `orientation` attribute now, and the

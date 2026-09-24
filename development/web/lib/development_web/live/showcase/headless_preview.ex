@@ -2350,6 +2350,12 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
   attr :open, :boolean, default: false
   attr :height, :string, default: "17rem"
 
+  attr :hook, :string,
+    default: "Chart",
+    doc: "the harness vendors extra engines under other hooks"
+
+  attr :lib, :string, default: nil, doc: "the `--lib` that installs this engine as `Chart`"
+
   defp chart_card(assigns) do
     ~H"""
     <details
@@ -2358,21 +2364,33 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
     >
       <summary class="cursor-pointer select-none font-medium">{@title}</summary>
       <p :if={@note} class="mt-1 text-sm text-[var(--c-base-content)]/60">{@note}</p>
-      <.chart id={@id} option={@option} height={@height} aria_label={@aria} class="mt-3 w-full" />
+      <.chart
+        id={@id}
+        hook={@hook}
+        option={@option}
+        height={@height}
+        aria_label={@aria}
+        class="mt-3 w-full"
+      />
       <details class="group mt-3">
         <summary class="cursor-pointer select-none text-xs font-medium text-[var(--c-base-content)]/50 hover:text-[var(--c-base-content)]/80">
           <span class="group-open:hidden">▸ Show code</span>
           <span class="hidden group-open:inline">▾ Hide code</span>
         </summary>
-        <.code_block class="mt-2" code={chart_snippet(@aria, @height, @option)} wrap />
+        <.code_block class="mt-2" code={chart_snippet(@aria, @height, @option, @lib)} wrap />
       </details>
     </details>
     """
   end
 
-  # The copy-paste snippet: the real option map, pretty-printed, wrapped in a `<.chart>` call.
-  defp chart_snippet(aria, height, option) do
-    ~s|<.chart\n  id="my-chart"\n  height=#{inspect(height)}\n  aria_label=#{inspect(aria)}\n  option={| <>
+  # The copy-paste snippet: the real option map, pretty-printed, wrapped in a `<.chart>` call. A
+  # non-default engine is named in a leading comment: in the app it installs under the same
+  # `Chart` hook, so the markup itself never mentions it.
+  defp chart_snippet(aria, height, option, lib) do
+    generate = if lib, do: "<%!-- mix mishka.ui.gen.headless chart --lib #{lib} --%>\n", else: ""
+
+    generate <>
+      ~s|<.chart\n  id="my-chart"\n  height=#{inspect(height)}\n  aria_label=#{inspect(aria)}\n  option={| <>
       inspect(option, pretty: true, limit: :infinity, width: 66) <>
       "}\n/>"
   end
@@ -2601,8 +2619,395 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
     ]
   end
 
+  # The same tour for the TanStack engine (`--lib tanstack`). Its option is TanStack's grammar
+  # spelled as data: marks named by `mark:` with their rows in `data:`, scales and curves named
+  # rather than imported. Rows are plain maps — exactly what an Ecto query hands you.
+  defp tanstack_chart_examples(prefix) do
+    revenue = [
+      %{month: "Jan", revenue: 820},
+      %{month: "Feb", revenue: 932},
+      %{month: "Mar", revenue: 901},
+      %{month: "Apr", revenue: 1234},
+      %{month: "May", revenue: 1290},
+      %{month: "Jun", revenue: 1330}
+    ]
+
+    daily = [
+      %{day: "2026-09-01", revenue: 1520},
+      %{day: "2026-09-02", revenue: 2310},
+      %{day: "2026-09-03", revenue: 1980},
+      %{day: "2026-09-04", revenue: 3020},
+      %{day: "2026-09-05", revenue: 2870},
+      %{day: "2026-09-06", revenue: 3560},
+      %{day: "2026-09-07", revenue: 4120}
+    ]
+
+    downloads = [
+      %{package: "Query", downloads: 1_480_000},
+      %{package: "Router", downloads: 520_000},
+      %{package: "Table", downloads: 360_000},
+      %{package: "Form", downloads: 210_000}
+    ]
+
+    commits =
+      for {day, counts} <- [
+            {"Mon", [3, 8, 5, 2]},
+            {"Tue", [6, 2, 9, 4]},
+            {"Wed", [4, 7, 1, 6]},
+            {"Thu", [8, 5, 6, 3]},
+            {"Fri", [2, 3, 4, 9]}
+          ],
+          {hour, count} <- Enum.zip(~w(9am 12pm 3pm 6pm), counts),
+          do: %{day: day, hour: hour, commits: count}
+
+    profile = [
+      %{metric: "Speed", score: 0.9, car: "Sport"},
+      %{metric: "Power", score: 0.85, car: "Sport"},
+      %{metric: "Range", score: 0.4, car: "Sport"},
+      %{metric: "Comfort", score: 0.5, car: "Sport"},
+      %{metric: "Safety", score: 0.7, car: "Sport"},
+      %{metric: "Speed", score: 0.55, car: "Touring"},
+      %{metric: "Power", score: 0.5, car: "Touring"},
+      %{metric: "Range", score: 0.9, car: "Touring"},
+      %{metric: "Comfort", score: 0.85, car: "Touring"},
+      %{metric: "Safety", score: 0.8, car: "Touring"}
+    ]
+
+    [
+      %{
+        id: "#{prefix}-ts-bars",
+        open: true,
+        title: "Bars — the smallest useful option",
+        aria: "Monthly revenue",
+        note:
+          "No x scale given: the month strings under a bar make it a band, inferred from the " <>
+            ~s(rows. The y ticks use the "chelekom:compact" sentinel.),
+        option: %{
+          marks: [
+            %{mark: "barY", data: revenue, x: "month", y: "revenue", radius: 4},
+            %{mark: "ruleY", data: [0]}
+          ],
+          scales: %{
+            y: %{
+              scale: "linear",
+              nice: true,
+              grid: true,
+              axis: %{ticks: %{format: "chelekom:compact"}}
+            }
+          },
+          tooltip: true
+        }
+      },
+      %{
+        id: "#{prefix}-ts-time",
+        open: true,
+        title: "Time series with a faded area",
+        aria: "Daily revenue over a week",
+        note:
+          ~s(A "utc" scale parses the ISO date strings; "chelekom:fade" fills the area with a ) <>
+            "gradient of the series color, and the tooltip formats as USD.",
+        option: %{
+          marks: [
+            %{
+              mark: "areaY",
+              data: daily,
+              x: "day",
+              y: "revenue",
+              fill: "chelekom:fade",
+              curve: "monotone"
+            },
+            %{
+              mark: "lineY",
+              data: daily,
+              x: "day",
+              y: "revenue",
+              curve: "monotone",
+              strokeWidth: 2,
+              points: true
+            }
+          ],
+          scales: %{
+            x: %{scale: "utc"},
+            y: %{
+              scale: "linear",
+              nice: true,
+              grid: true,
+              axis: %{ticks: %{format: "chelekom:currency:USD"}}
+            }
+          },
+          tooltip: %{
+            items: [
+              %{channel: "x", label: "Day"},
+              %{channel: "y", label: "Revenue", text: "chelekom:currency:USD"}
+            ]
+          }
+        }
+      },
+      %{
+        id: "#{prefix}-ts-grouped",
+        title: "Grouped bars with a legend",
+        aria: "This year versus last year by quarter",
+        note:
+          ~s(One mark, `color: "series"` splits it; `layout: "group"` sets the bars side by side ) <>
+            ~s(and `focus: "group-x"` puts both in one tooltip.),
+        option: %{
+          marks: [
+            %{
+              mark: "barY",
+              data: [
+                %{quarter: "Q1", series: "This year", deals: 320},
+                %{quarter: "Q1", series: "Last year", deals: 280},
+                %{quarter: "Q2", series: "This year", deals: 410},
+                %{quarter: "Q2", series: "Last year", deals: 350},
+                %{quarter: "Q3", series: "This year", deals: 380},
+                %{quarter: "Q3", series: "Last year", deals: 390},
+                %{quarter: "Q4", series: "This year", deals: 520},
+                %{quarter: "Q4", series: "Last year", deals: 430}
+              ],
+              x: "quarter",
+              y: "deals",
+              color: "series",
+              layout: "group",
+              radius: 3
+            }
+          ],
+          color: %{legend: %{placement: "bottom"}},
+          focus: "group-x",
+          tooltip: true
+        }
+      },
+      %{
+        id: "#{prefix}-ts-stack",
+        title: "Stacked area",
+        aria: "Revenue by business line, stacked",
+        note:
+          ~s(`layout: %{type: "stack", order: [...]}` stacks the series; the tooltip reports each ) <>
+            "layer's own value, not the running total.",
+        option: %{
+          marks: [
+            %{
+              mark: "areaY",
+              data: [
+                %{quarter: "Q1", business: "Core", revenue: 42},
+                %{quarter: "Q1", business: "Services", revenue: 18},
+                %{quarter: "Q2", business: "Core", revenue: 48},
+                %{quarter: "Q2", business: "Services", revenue: 24},
+                %{quarter: "Q3", business: "Core", revenue: 53},
+                %{quarter: "Q3", business: "Services", revenue: 31},
+                %{quarter: "Q4", business: "Core", revenue: 59},
+                %{quarter: "Q4", business: "Services", revenue: 38}
+              ],
+              x: "quarter",
+              y: "revenue",
+              color: "business",
+              layout: %{type: "stack", order: ["Core", "Services"]},
+              fillOpacity: 0.8,
+              curve: "monotone"
+            }
+          ],
+          scales: %{
+            y: %{scale: "linear", nice: true, grid: true, axis: %{label: "Revenue (k$)"}}
+          },
+          color: %{legend: %{label: "Business"}},
+          focus: "group-x",
+          tooltip: true
+        }
+      },
+      %{
+        id: "#{prefix}-ts-ranking",
+        title: "Ranking with value labels",
+        aria: "Weekly downloads by package",
+        note:
+          ~s(`barX` puts the category on y. A `text` mark labels each bar; its ) <>
+            ~s(`format: "chelekom:compact"` formats the value.),
+        option: %{
+          marks: [
+            %{mark: "barX", data: downloads, x: "downloads", y: "package", radius: 3},
+            %{
+              mark: "text",
+              data: downloads,
+              x: "downloads",
+              y: "package",
+              text: "downloads",
+              format: "chelekom:compact",
+              anchor: "start",
+              dx: 6,
+              fontSize: 11
+            }
+          ],
+          scales: %{
+            x: %{
+              scale: "linear",
+              nice: true,
+              grid: true,
+              axis: %{ticks: %{format: "chelekom:compact"}}
+            }
+          },
+          tooltip: true
+        }
+      },
+      %{
+        id: "#{prefix}-ts-scatter",
+        title: "Scatter by group",
+        aria: "Height versus weight by group",
+        note: "`dot` with a `color` channel and a legend; axis titles carry into the tooltip.",
+        option: %{
+          marks: [
+            %{
+              mark: "dot",
+              data: [
+                %{height: 160, weight: 55, group: "A"},
+                %{height: 165, weight: 60, group: "A"},
+                %{height: 158, weight: 50, group: "A"},
+                %{height: 170, weight: 68, group: "B"},
+                %{height: 175, weight: 72, group: "B"},
+                %{height: 182, weight: 85, group: "B"},
+                %{height: 190, weight: 92, group: "B"}
+              ],
+              x: "height",
+              y: "weight",
+              color: "group",
+              r: 5,
+              fillOpacity: 0.8
+            }
+          ],
+          scales: %{
+            x: %{scale: "linear", nice: true, axis: %{label: "Height (cm)"}},
+            y: %{scale: "linear", nice: true, grid: true, axis: %{label: "Weight (kg)"}}
+          },
+          color: %{legend: true},
+          tooltip: true
+        }
+      },
+      %{
+        id: "#{prefix}-ts-donut",
+        title: "Donut",
+        aria: "Visits by channel",
+        note:
+          ~s(A `polar` container; `pie: %{value: "visits"}` allocates the angles and ) <>
+            ~s(`innerRadius: "58%"` opens the hole. The tooltip adds each slice's share.),
+        option: %{
+          marks: [
+            %{
+              mark: "polar",
+              inset: 8,
+              radiusRatio: 0.9,
+              marks: [
+                %{
+                  mark: "radialArc",
+                  data: [
+                    %{channel: "Direct", visits: 335},
+                    %{channel: "Email", visits: 310},
+                    %{channel: "Ads", visits: 234},
+                    %{channel: "Video", visits: 135},
+                    %{channel: "Search", visits: 548}
+                  ],
+                  pie: %{value: "visits", gapAngle: 0.02},
+                  innerRadius: "58%",
+                  cornerRadius: 4,
+                  color: "channel",
+                  key: "channel"
+                }
+              ]
+            }
+          ],
+          color: %{legend: %{placement: "bottom"}},
+          tooltip: true
+        }
+      },
+      %{
+        id: "#{prefix}-ts-radar",
+        height: "18rem",
+        title: "Radar",
+        aria: "Sport versus touring car profile",
+        note:
+          ~s(Polar `radialArea` + `radialLine`: `z: "car"` draws one closed shape per car, ) <>
+            ~s(`curve: "linearClosed"` joins it, over polygon and angle grids.),
+        option: %{
+          marks: [
+            %{
+              mark: "polar",
+              radiusRatio: 0.72,
+              scales: %{
+                angle: %{
+                  scale: "point",
+                  domain: ~w(Speed Power Range Comfort Safety),
+                  wrap: true
+                },
+                radius: %{scale: "linear", domain: [0, 1]}
+              },
+              guides: [
+                %{
+                  guide: "radialGrid",
+                  values: [0.25, 0.5, 0.75, 1],
+                  shape: "polygon",
+                  strokeOpacity: 0.25
+                },
+                %{guide: "angleGrid", labels: true, strokeOpacity: 0.25}
+              ],
+              marks: [
+                %{
+                  mark: "radialArea",
+                  data: profile,
+                  angle: "metric",
+                  radius: "score",
+                  z: "car",
+                  color: "car",
+                  curve: "linearClosed",
+                  fillOpacity: 0.2
+                },
+                %{
+                  mark: "radialLine",
+                  data: profile,
+                  angle: "metric",
+                  radius: "score",
+                  z: "car",
+                  color: "car",
+                  curve: "linearClosed",
+                  strokeWidth: 2
+                }
+              ]
+            }
+          ],
+          color: %{legend: %{placement: "bottom"}},
+          tooltip: true
+        }
+      },
+      %{
+        id: "#{prefix}-ts-heatmap",
+        title: "Heatmap",
+        aria: "Commits by weekday and hour",
+        note:
+          ~s(`cell` marks on two band scales; a `"linear"` color scale interpolates the range ) <>
+            "and `gradient: true` draws its legend.",
+        option: %{
+          marks: [
+            %{
+              mark: "cell",
+              data: commits,
+              x: "hour",
+              y: "day",
+              color: "commits",
+              inset: 1
+            }
+          ],
+          scales: %{x: %{scale: "band"}, y: %{scale: "band"}},
+          color: %{
+            scale: "linear",
+            range: ["#dbeafe", "#1d4ed8"],
+            legend: %{gradient: true, label: "Commits"}
+          },
+          tooltip: true
+        }
+      }
+    ]
+  end
+
   def examples(%{component: "chart"} = assigns) do
-    assigns = assign(assigns, :cards, chart_examples(assigns.id))
+    assigns =
+      assigns
+      |> assign(:cards, chart_examples(assigns.id))
+      |> assign(:tanstack_cards, tanstack_chart_examples(assigns.id))
 
     ~H"""
     <div class="grid min-w-0 gap-4 lg:grid-cols-2">
@@ -2632,6 +3037,55 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
       code={~S|push_event(socket, "chelekom:chart", %{id: "my-chart", option: new_option})|}
       wrap
     />
+
+    <details
+      id={"#{@id}-tanstack"}
+      class="mt-6 min-w-0 rounded-lg border border-[var(--c-base-300)] bg-[var(--c-base-100)] p-4"
+      open
+    >
+      <summary class="cursor-pointer select-none font-medium">
+        TanStack Charts engine — <code>--lib tanstack</code>
+      </summary>
+      <p class="mt-1 text-sm text-[var(--c-base-content)]/60">
+        The same <code>&lt;.chart&gt;</code>
+        over <a
+          href="https://tanstack.com/charts/latest"
+          target="_blank"
+          class="text-[var(--c-primary)] underline"
+        >TanStack Charts</a>' framework-agnostic core. Generate it with
+        <code>mix mishka.ui.gen.headless chart --lib tanstack</code>
+        and it installs as <code>chart.js</code>
+        under the same <code>Chart</code>
+        hook — the harness vendors it beside ECharts only so both can be shown. Its option is
+        TanStack's grammar spelled as data: marks by name, scales and curves by name, rows as plain
+        maps. The SVG it draws reads the <code>--chart-*</code>
+        properties directly, so a theme toggle recolors it without a redraw, and it is
+        keyboard-navigable (Tab, then the arrow keys; Enter pins the tooltip).
+      </p>
+      <div class="mt-4 grid min-w-0 gap-4 lg:grid-cols-2">
+        <.chart_card
+          :for={c <- @tanstack_cards}
+          id={c.id}
+          hook="ChartTanstack"
+          lib="tanstack"
+          title={c.title}
+          aria={c.aria}
+          option={c.option}
+          note={c.note}
+          height={Map.get(c, :height, "17rem")}
+          open={Map.get(c, :open, false)}
+        />
+      </div>
+
+      <h5 class="mt-6 text-sm font-semibold">Server-driven: push new data, receive clicks</h5>
+      <p class="mt-1 text-sm text-[var(--c-base-content)]/60">
+        A push replaces the whole option and TanStack reconciles the scene by key, so the bars
+        animate to their new values. <code>on_click</code> sends the point back with its row.
+      </p>
+      <div class="mt-3">
+        <.live_component module={DevelopmentWeb.Showcase.ChartTanstackDemo} id={"#{@id}-ts-demo"} />
+      </div>
+    </details>
     """
   end
 

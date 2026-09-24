@@ -163,6 +163,21 @@ defmodule MishkaChelekom.CatalogIntegrityTest do
       end
     end
 
+    test "every libs entry pins its own npm packages exactly" do
+      # The top-level check above only sees the default engine; each engine re-pins its own set,
+      # and an engine that brings helpers (tanstack's d3-scale/d3-shape) must pin them to the same
+      # exact versions its main package pins, or npm installs a second copy beside it.
+      bad =
+        for {name, cfg} <- configs_with(:libs),
+            {lib, opts} <- cfg[:libs],
+            dep <- Keyword.get(opts, :npm, []),
+            not (is_map(dep) and is_binary(dep[:name]) and
+                   is_binary(dep[:version]) and dep[:version] =~ ~r/^\d+\.\d+\.\d+$/),
+            do: "#{name}/#{lib} -> #{inspect(dep)}"
+
+      assert bad == [], "libs npm deps must be %{name: _, version: \"x.y.z\"}: #{inspect(bad)}"
+    end
+
     test "every libs engine file exists" do
       missing =
         for {name, cfg} <- configs_with(:libs),
