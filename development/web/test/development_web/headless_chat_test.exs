@@ -34,7 +34,8 @@ defmodule DevelopmentWeb.HeadlessChatTest do
 
   describe "chat_thread" do
     test "the hook sits on the root, the messages are a log that is busy while running" do
-      doc = doc(render_component(&ChatThread.chat_thread/1, id: "t", running: true, inner_block: []))
+      doc =
+        doc(render_component(&ChatThread.chat_thread/1, id: "t", running: true, inner_block: []))
 
       assert attr(doc, "[data-part=root]", "phx-hook") == "ChatThread"
       assert attr(doc, "[data-part=messages]", "role") == "log"
@@ -100,7 +101,9 @@ defmodule DevelopmentWeb.HeadlessChatTest do
     end
 
     test "the error slot is an alert, rendered only for a failed message" do
-      assert attr(render_message(%{status: "error"}, true), "[data-part=error]", "role") == "alert"
+      assert attr(render_message(%{status: "error"}, true), "[data-part=error]", "role") ==
+               "alert"
+
       refute has_attr?(render_message(%{}, true), "[data-part=error]", "role")
     end
 
@@ -158,7 +161,11 @@ defmodule DevelopmentWeb.HeadlessChatTest do
       refute has_attr?(doc, "[data-part=send]", "data-part")
 
       # Without a stop event there is nothing to stop with: send stays, disabled.
-      assert has_attr?(composer(id: "c", running: true, value: "x"), "[data-part=send]", "disabled")
+      assert has_attr?(
+               composer(id: "c", running: true, value: "x"),
+               "[data-part=send]",
+               "disabled"
+             )
     end
   end
 
@@ -193,6 +200,15 @@ defmodule DevelopmentWeb.HeadlessChatTest do
 
       assert LazyHTML.attribute(LazyHTML.query(doc, "[data-part=action]"), "aria-pressed") ==
                ["true"]
+
+      # The native `value`, never phx-value-value: LiveView's client overwrites a "value" param
+      # with the clicked button's own `value` property, so phx-value-value arrives as "".
+      assert LazyHTML.attribute(LazyHTML.query(doc, "[data-part=action]"), "value") == [
+               "m1",
+               "up"
+             ]
+
+      refute has_attr?(doc, "[data-part=action]", "phx-value-value")
     end
   end
 
@@ -209,6 +225,7 @@ defmodule DevelopmentWeb.HeadlessChatTest do
       assert has_attr?(first, "[data-part=previous]", "disabled")
       refute has_attr?(first, "[data-part=next]", "disabled")
       assert texts(first, "[data-part=status]") == ["1 / 3"]
+      assert attr(picker(index: 1, count: 3, value: "m-2"), "[data-part=next]", "value") == "m-2"
 
       last = picker(index: 3, count: 3)
       refute has_attr?(last, "[data-part=previous]", "disabled")
@@ -237,13 +254,22 @@ defmodule DevelopmentWeb.HeadlessChatTest do
     end
 
     test "done reads how long it took" do
-      assert texts(doc(render_component(&reasoning/1, status: "done", duration: 4)), "[data-part=label]") ==
+      assert texts(
+               doc(render_component(&reasoning/1, status: "done", duration: 4)),
+               "[data-part=label]"
+             ) ==
                ["Thought for 4 seconds"]
 
-      assert texts(doc(render_component(&reasoning/1, status: "done", duration: 1)), "[data-part=label]") ==
+      assert texts(
+               doc(render_component(&reasoning/1, status: "done", duration: 1)),
+               "[data-part=label]"
+             ) ==
                ["Thought for 1 second"]
 
-      assert texts(doc(render_component(&reasoning/1, status: "done", duration: nil)), "[data-part=label]") ==
+      assert texts(
+               doc(render_component(&reasoning/1, status: "done", duration: nil)),
+               "[data-part=label]"
+             ) ==
                ["Thought"]
     end
 
@@ -258,7 +284,13 @@ defmodule DevelopmentWeb.HeadlessChatTest do
 
   describe "chat_tool_call" do
     defp tool(attrs),
-      do: doc(render_component(&ChatToolCall.chat_tool_call/1, Keyword.put_new(attrs, :name, "web_search")))
+      do:
+        doc(
+          render_component(
+            &ChatToolCall.chat_tool_call/1,
+            Keyword.put_new(attrs, :name, "web_search")
+          )
+        )
 
     test "status is an attribute and a word, and running is busy" do
       doc = tool(status: "running")
@@ -266,36 +298,61 @@ defmodule DevelopmentWeb.HeadlessChatTest do
       assert attr(doc, "[data-part=root]", "data-status") == "running"
       assert attr(doc, "[data-part=root]", "aria-busy") == "true"
       assert texts(doc, "[data-part=status]") == ["Running"]
-      assert texts(tool(status: "awaiting_approval"), "[data-part=status]") == ["Waiting for approval"]
-      assert texts(tool(status: "success", status_labels: %{"success" => "Ok"}), "[data-part=status]") == ["Ok"]
+
+      assert texts(tool(status: "awaiting_approval"), "[data-part=status]") == [
+               "Waiting for approval"
+             ]
+
+      assert texts(
+               tool(status: "success", status_labels: %{"success" => "Ok"}),
+               "[data-part=status]"
+             ) == ["Ok"]
     end
 
     test "arguments render as JSON, and a short duration in milliseconds" do
-      doc = tool(status: "success", args: %{"query" => "cones"}, output: "3 results", duration: 320)
+      doc =
+        tool(status: "success", args: %{"query" => "cones"}, output: "3 results", duration: 320)
 
       assert [args] = texts(doc, "[data-part=args] code")
       assert Jason.decode!(args) == %{"query" => "cones"}
       assert texts(doc, "[data-part=result] code") == ["3 results"]
       assert texts(doc, "[data-part=duration]") == ["320 ms"]
-      assert texts(tool(duration: 1_450), "[data-part=duration]") == ["1.5 s"]
+      assert texts(tool(duration: 2_500), "[data-part=duration]") == ["2.5 s"]
     end
   end
 
   describe "chat_approval" do
     defp approval(assigns) do
       ~H"""
-      <ChatApproval.chat_approval id="q" title="Pick" multiple={@multiple} status={@status} on_deny="skip">
+      <ChatApproval.chat_approval
+        id="q"
+        title="Pick"
+        multiple={@multiple}
+        status={@status}
+        on_deny="skip"
+      >
         <:option :for={value <- @options} value={value} label={value} />
       </ChatApproval.chat_approval>
       """
     end
 
     defp render_approval(opts),
-      do: doc(render_component(&approval/1, Enum.into(opts, %{multiple: false, status: "pending", options: ~w(a b)})))
+      do:
+        doc(
+          render_component(
+            &approval/1,
+            Enum.into(opts, %{multiple: false, status: "pending", options: ~w(a b)})
+          )
+        )
 
     test "options are native radios named after the field, checkboxes post a list" do
       radios = render_approval([])
-      assert LazyHTML.attribute(LazyHTML.query(radios, "[data-part=option-input]"), "type") == ["radio", "radio"]
+
+      assert LazyHTML.attribute(LazyHTML.query(radios, "[data-part=option-input]"), "type") == [
+               "radio",
+               "radio"
+             ]
+
       assert attr(radios, "[data-part=option-input]", "name") == "approval"
       assert texts(radios, "legend[data-part=title]") == ["Pick"]
 
@@ -343,7 +400,9 @@ defmodule DevelopmentWeb.HeadlessChatTest do
     defp file(attrs), do: doc(render_component(&ChatAttachment.chat_attachment/1, attrs))
 
     test "the kind comes from the MIME type or the extension, the size is human" do
-      assert attr(file(name: "a.png", type: "image/png"), "[data-part=root]", "data-kind") == "image"
+      assert attr(file(name: "a.png", type: "image/png"), "[data-part=root]", "data-kind") ==
+               "image"
+
       assert attr(file(name: "report.pdf"), "[data-part=root]", "data-kind") == "pdf"
       assert attr(file(name: "notes.MD"), "[data-part=root]", "data-kind") == "document"
       assert attr(file(name: "blob.xyz"), "[data-part=root]", "data-kind") == "file"
@@ -352,7 +411,8 @@ defmodule DevelopmentWeb.HeadlessChatTest do
     end
 
     test "progress only while uploading, and remove is labelled with the file name" do
-      uploading = file(name: "q.xlsx", status: "uploading", progress: 64, on_remove: "rm", ref: "3")
+      uploading =
+        file(name: "q.xlsx", status: "uploading", progress: 64, on_remove: "rm", ref: "3")
 
       assert attr(uploading, "progress[data-part=progress]", "value") == "64"
       assert attr(uploading, "[data-part=root]", "aria-busy") == "true"

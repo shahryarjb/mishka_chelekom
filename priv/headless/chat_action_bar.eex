@@ -56,7 +56,7 @@ defmodule <%= @module %> do
   slot :action, doc: "A button sending a LiveView event" do
     attr :label, :string, required: true, doc: "Accessible name (and the text when empty)"
     attr :on_click, :string, doc: "LiveView event to push"
-    attr :value, :any, doc: "Sent as phx-value-value"
+    attr :value, :any, doc: "The button's value — LiveView sends it as \"value\""
     attr :pressed, :boolean, doc: "Makes it a toggle button (aria-pressed)"
     attr :disabled, :boolean
     attr :name, :string, doc: "Exposed as data-action, for styling one action"
@@ -105,7 +105,7 @@ defmodule <%= @module %> do
         aria-pressed={Map.has_key?(action, :pressed) && to_string(action[:pressed] == true)}
         disabled={action[:disabled]}
         phx-click={action[:on_click]}
-        phx-value-value={action[:value]}
+        value={action[:value]}
         phx-target={@target}
         data-part="action"
         data-action={action[:name]}

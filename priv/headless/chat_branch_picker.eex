@@ -26,7 +26,7 @@ defmodule <%= @module %> do
   attr :count, :integer, required: true, doc: "How many versions exist"
   attr :on_previous, :string, default: nil, doc: "LiveView event for the previous button"
   attr :on_next, :string, default: nil, doc: "LiveView event for the next button"
-  attr :value, :any, default: nil, doc: "Sent with both events as phx-value-value"
+  attr :value, :any, default: nil, doc: ~s|Both buttons' `value`, which LiveView sends as "value" (typically the message id)|
   attr :target, :any, default: nil, doc: "phx-target for both buttons"
   attr :always, :boolean, default: false, doc: "Render even when there is only one version"
   attr :label, :string, default: "Versions", doc: "Accessible name of the group"
@@ -59,7 +59,7 @@ defmodule <%= @module %> do
         aria-label={@previous_label}
         disabled={@index <= 1}
         phx-click={@on_previous}
-        phx-value-value={@value}
+        value={@value}
         phx-target={@target}
         data-part="previous"
         class={["chelekom-chat-branch-picker__previous", @previous_class]}
@@ -79,7 +79,7 @@ defmodule <%= @module %> do
         aria-label={@next_label}
         disabled={@index >= @count}
         phx-click={@on_next}
-        phx-value-value={@value}
+        value={@value}
         phx-target={@target}
         data-part="next"
         class={["chelekom-chat-branch-picker__next", @next_class]}

@@ -41,6 +41,7 @@ defmodule DevelopmentWeb.ChatDemoLiveTest do
     assert count(html, "[data-role=assistant][data-status=complete]") == 1
     # The newest answer keeps its actions visible (autohide="not_last").
     assert count(html, "[data-last][data-role=assistant] [data-autohide=not_last]") == 1
+
     assert query(html, "[data-part=item][data-active] [data-part=title]") |> LazyHTML.text() =~
              "Summer flavor launch"
   end
@@ -94,7 +95,12 @@ defmodule DevelopmentWeb.ChatDemoLiveTest do
     view |> element("[data-last] [data-part=previous]") |> render_click()
     html = render(view)
     assert html =~ "1 / 2"
-    assert query(html, "[data-last] [data-part=next]") |> LazyHTML.attribute("disabled") == [""]
+    # Back on the first version: nothing before it, the regenerated one after it.
+    assert query(html, "[data-last] [data-part=previous]") |> LazyHTML.attribute("disabled") == [
+             ""
+           ]
+
+    assert query(html, "[data-last] [data-part=next]") |> LazyHTML.attribute("disabled") == []
   end
 
   test "feedback is a toggle", %{conn: conn} do
@@ -156,7 +162,9 @@ defmodule DevelopmentWeb.ChatDemoLiveTest do
     assert count(html, "[data-part=empty] [data-part=suggestion]") == 3
 
     view
-    |> element(~s([data-part=empty] [data-part=suggestion][data-prompt="Find a waffle cone supplier"]))
+    |> element(
+      ~s([data-part=empty] [data-part=suggestion][data-prompt="Find a waffle cone supplier"])
+    )
     |> render_click()
 
     html = eventually(view, &idle?/1)

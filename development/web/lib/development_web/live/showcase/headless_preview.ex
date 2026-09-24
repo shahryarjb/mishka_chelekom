@@ -4073,7 +4073,7 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
       wired into one working AI chat with a scripted model:
     </p>
     <.link
-      navigate={~p"/showcase/chat"}
+      navigate="/showcase/chat"
       class="mt-3 inline-flex rounded-lg border border-[var(--c-base-300)] px-3 py-2 text-sm font-medium hover:bg-[var(--c-base-200)]"
     >
       Open the AI chat demo →

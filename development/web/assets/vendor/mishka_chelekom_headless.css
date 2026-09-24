@@ -579,7 +579,8 @@
   overscroll-behavior: contain;
 }
 
-.chelekom-chat-thread:has(.chelekom-chat-thread__messages > *) .chelekom-chat-thread__empty {
+.chelekom-chat-thread:has( .chelekom-chat-thread__messages > *)
+  .chelekom-chat-thread__empty {
   display: none;
 }
 
