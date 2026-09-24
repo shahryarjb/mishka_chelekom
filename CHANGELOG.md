@@ -18,7 +18,12 @@
   - a human-in-the-loop approval, tool calls with arguments and results, sources, attachments that
     map onto LiveView uploads, copy/regenerate/feedback actions, and response branches
 
-  `/showcase/chat` wires all of them into one working chat, with a scripted model
+  `/showcase/chat` wires all of them into one working chat, with a scripted model, and
+  `/showcase/chat/lab` feeds them the way Ash AI (PubSub re-broadcast of the whole message,
+  `stream_insert` at 0 into a reversed list), Jido AI (`ai.llm.delta` signals with `seq`, possibly
+  out of order) and ReqLLM (stream chunks from a task) deliver model output. `chat_stream` orders
+  sequenced deltas and turns a re-rendered, growing text into an append; `chat_thread` keeps the
+  reader's place however the list is ordered
 - The CMS bundle carries each attribute's own option list. A component's `args:` config already
   enumerates what `variant`, `color`, `size`, `rounded` and `padding` accept, and the exporter threw
   it away — a consumer had to recover the same lists from the `<%= if %>` gating around each helper

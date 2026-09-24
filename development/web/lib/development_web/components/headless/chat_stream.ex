@@ -10,8 +10,19 @@ defmodule DevelopmentWeb.Components.Headless.ChatStream do
       push_event(socket, "chelekom:chat-stream", %{id: "answer", done: true})
 
   `%{id: "answer", text: full}` replaces the text (a regenerate, or swapping in the final text).
-  Re-rendering with a new `text` works too — it arrives as `data-text`, which is also what a
-  reconnect re-renders, so assign the accumulated text once the stream finishes.
+
+  **Deltas out of order.** Give each delta a `seq`: pieces are kept in `seq` order, a late one is
+  put back where it belongs and a repeat is dropped — `%{id: "answer", delta: chunk, seq: 7}`.
+  Gaps are fine (nothing waits for a missing number). Jido AI's `ai.llm.delta` signal carries
+  exactly this `seq` and says delivery order is not guaranteed, so a signal handler is:
+
+      def handle_info(%{type: "ai.llm.delta", data: %{chunk_type: :content} = d}, socket),
+        do: {:noreply, push_event(socket, "chelekom:chat-stream", %{id: "answer", delta: d.delta, seq: d.seq})}
+
+  **Re-rendering instead.** If your stack re-broadcasts the whole message per chunk (Ash AI's
+  generated chat upserts the message and `Ash.Notifier.PubSub` broadcasts it), just pass the
+  accumulated text as `text`: it arrives as `data-text`, and when it extends what is shown only
+  the new part is appended — `smooth` still works. A reconnect re-renders the same way.
 
   `smooth` reveals buffered text a few characters per frame (faster when more is waiting), so a
   model that emits whole sentences at once still reads as an even stream.

@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { isAtBottom, isUserScrollUp, overflows } from "./chat_thread.js";
 import { shouldSubmit } from "./chat_composer.js";
-import { revealCount } from "./chat_stream.js";
+import { joinPieces, placeBySeq, revealCount } from "./chat_stream.js";
 
 test("at the bottom within the sub-pixel slack, and whenever nothing overflows", () => {
   assert.equal(isAtBottom({ scrollTop: 600, scrollHeight: 1000, clientHeight: 400 }), true);
@@ -67,4 +67,34 @@ test("the stream reveals at least a character and drains any backlog in ~12 fram
   assert.equal(revealCount(5), 1);
   assert.equal(revealCount(120), 10);
   assert.ok(revealCount(10_000) * 12 >= 10_000);
+});
+
+test("sequenced deltas in order append", () => {
+  const pieces = [];
+  assert.equal(placeBySeq(pieces, 1, "Hel"), "append");
+  assert.equal(placeBySeq(pieces, 2, "lo"), "append");
+  assert.equal(joinPieces(pieces), "Hello");
+});
+
+test("a late delta is placed where it belongs, never dropped", () => {
+  const pieces = [];
+  placeBySeq(pieces, 2, "should ");
+  assert.equal(placeBySeq(pieces, 1, "Pistachio "), "insert");
+  assert.equal(placeBySeq(pieces, 3, "lead."), "append");
+  assert.equal(joinPieces(pieces), "Pistachio should lead.");
+});
+
+test("gaps never stall: Jido's seq counts every runtime event, not only text", () => {
+  const pieces = [];
+  placeBySeq(pieces, 4, "a");
+  placeBySeq(pieces, 9, "b");
+  assert.equal(placeBySeq(pieces, 15, "c"), "append");
+  assert.equal(joinPieces(pieces), "abc");
+});
+
+test("a repeated delta is dropped", () => {
+  const pieces = [];
+  placeBySeq(pieces, 1, "a");
+  assert.equal(placeBySeq(pieces, 1, "a"), "duplicate");
+  assert.equal(joinPieces(pieces), "a");
 });

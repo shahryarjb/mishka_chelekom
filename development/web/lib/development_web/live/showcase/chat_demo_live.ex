@@ -495,7 +495,13 @@ defmodule DevelopmentWeb.Showcase.ChatDemoLive do
 
       <main class="flex min-w-0 flex-1 flex-col">
         <header class="border-b border-neutral-200 px-4 py-3 text-sm font-medium dark:border-neutral-800">
-          Mishka Chelekom · headless AI chat
+          Mishka Chelekom · headless AI chat ·
+          <.link
+            navigate={~p"/showcase/chat/lab"}
+            class="font-normal text-neutral-500 hover:underline"
+          >
+            lab: Ash AI, Jido, ReqLLM →
+          </.link>
         </header>
 
         <.chat_thread

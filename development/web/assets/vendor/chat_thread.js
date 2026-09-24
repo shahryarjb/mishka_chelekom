@@ -13,9 +13,12 @@
 //
 // Two more things LiveView apps need:
 //
-//   * loading older history ABOVE the reader must not move what they are looking at: when content
-//     is added while we are not following and the first message changed, the scroll offset is
-//     shifted by exactly the height that was added
+//   * content changing ABOVE the reader must not move what they are looking at — older history
+//     loaded on top, or (Ash AI's layout) new messages stream_insert-ed `at: 0` into a
+//     `flex-col-reverse` list. While not following, the hook anchors the first message in view:
+//     it remembers that element's offset and, after any change, scrolls by however far it moved.
+//     This does not depend on insertion order or direction, and composes with the browser's own
+//     `overflow-anchor` (if the browser already corrected, the element did not move)
 //   * `data-on-top` names an event pushed (once per content change) when the reader reaches the
 //     top, so the server can stream in the previous page
 //
@@ -60,6 +63,7 @@ const ChatThread = {
     this.topRequested = false;
     this.remember();
     this.firstMessage = this.messages.firstElementChild;
+    this.anchor = this.captureAnchor();
 
     this.onScroll = () => this.handleScroll();
     this.viewport.addEventListener("scroll", this.onScroll, { passive: true });
@@ -174,7 +178,18 @@ const ChatThread = {
     if (now.scrollTop <= TOP_SLACK && this.last.scrollTop > now.scrollTop) this.reachedTop();
 
     this.last = now;
+    this.anchor = this.captureAnchor();
     this.sync();
+  },
+
+  // The first message whose bottom edge is below the viewport's top: the one the reader is on.
+  captureAnchor() {
+    const top = this.viewport.getBoundingClientRect().top;
+    for (const el of this.messages.children) {
+      const rect = el.getBoundingClientRect();
+      if (rect.bottom > top) return { el, offset: rect.top - top };
+    }
+    return null;
   },
 
   reachedTop() {
@@ -194,23 +209,27 @@ const ChatThread = {
   },
 
   relayout() {
-    const before = this.last;
     const now = this.metrics();
     const first = this.messages.firstElementChild;
-    const prepended = first !== this.firstMessage && now.scrollHeight > before.scrollHeight;
-    if (first !== this.firstMessage) this.topRequested = false;
+    // New content arrived: the top can be asked for again (a next page of history).
+    if (first !== this.firstMessage || now.scrollHeight !== this.last.scrollHeight) {
+      this.topRequested = false;
+    }
     this.firstMessage = first;
 
     if (this.follow && this.autoScroll()) {
       this.viewport.scrollTo({ top: now.scrollHeight, behavior: "instant" });
     } else if (this.pending) {
       this.viewport.scrollTo({ top: now.scrollHeight, behavior: this.pending });
-    } else if (prepended) {
-      // Older history arrived above the reader: keep the same message under their eyes.
-      this.viewport.scrollTop = before.scrollTop + (now.scrollHeight - before.scrollHeight);
+    } else if (this.anchor && this.anchor.el.isConnected) {
+      // Keep the message under the reader's eyes where it was, whatever moved above it.
+      const top = this.viewport.getBoundingClientRect().top;
+      const moved = this.anchor.el.getBoundingClientRect().top - top - this.anchor.offset;
+      if (Math.abs(moved) >= 1) this.viewport.scrollTop += moved;
     }
 
     this.remember();
+    this.anchor = this.captureAnchor();
     this.sync();
   },
 

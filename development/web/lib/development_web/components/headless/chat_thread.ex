@@ -10,7 +10,9 @@ defmodule DevelopmentWeb.Components.Headless.ChatThread do
   change, so a collapsing block or a re-layout never unpins you.
 
   Loading older history is supported too: `on_top` is pushed when the reader reaches the top, and
-  messages inserted *above* keep the one under the reader's eyes where it was.
+  messages inserted *above* keep the one under the reader's eyes where it was. That anchoring does
+  not care about DOM order, so Ash AI's generated layout — `stream_insert(..., at: 0)` into a
+  `flex-col-reverse` list (pass it as `messages_class`) — works as is.
 
   The messages live in a `role="log"` region with `aria-busy` while a run is in progress, so a
   screen reader announces the finished answer once rather than every streamed token.
