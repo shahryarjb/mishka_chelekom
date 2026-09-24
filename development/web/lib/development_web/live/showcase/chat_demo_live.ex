@@ -40,11 +40,13 @@ defmodule DevelopmentWeb.Showcase.ChatDemoLive do
     %{id: "t-3", title: "Freezer capacity plan", meta: "Sep 12"}
   ]
 
-  # Delays of the pretend model, in ms. Short enough to demo, long enough to watch each state.
-  @think 500
-  @tool 900
-  @answer 1_000
-  @token 30
+  # Delays of the pretend model, in ms. Short enough to demo, long enough to watch each state;
+  # config/test.exs scales them to zero.
+  @scale Application.compile_env(:development, :chat_demo_delay_scale, 1)
+  @think round(500 * @scale)
+  @tool round(900 * @scale)
+  @answer round(1_000 * @scale)
+  @token round(30 * @scale)
 
   @impl true
   def mount(_params, _session, socket) do

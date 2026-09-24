@@ -22,3 +22,7 @@ config :phoenix_live_view,
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,
   sort_verified_routes_query_params: true
+
+# The /showcase/chat demo's pretend model waits between thinking, tool calls and tokens so a
+# person can watch each state; tests run it at full speed.
+config :development, :chat_demo_delay_scale, 0
