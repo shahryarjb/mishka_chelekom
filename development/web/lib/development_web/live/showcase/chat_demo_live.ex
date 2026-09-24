@@ -610,8 +610,8 @@ defmodule DevelopmentWeb.Showcase.ChatDemoLive do
               smooth
               caret_class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-neutral-900 align-middle dark:bg-white"
             />
-            <div :if={msg.status == "complete"} id={"#{msg.id}-text"} class="whitespace-pre-line">
-              {msg.text}
+            <div :if={msg.status == "complete"} id={"#{msg.id}-text"} class="flex flex-col gap-3">
+              <p :for={paragraph <- String.split(msg.text, "\n\n")}>{paragraph}</p>
             </div>
 
             <.chat_sources

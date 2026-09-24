@@ -1,6 +1,24 @@
 # Changelog for MishkaChelekom 0.0.10
 
 ### Features:
+- Add 14 headless AI-chat components, taking the line from 92 to 106: `chat_thread`,
+  `chat_message`, `chat_stream`, `chat_composer`, `chat_action_bar`, `chat_branch_picker`,
+  `chat_reasoning`, `chat_tool_call`, `chat_approval`, `chat_suggestions`, `chat_attachment`,
+  `chat_sources`, `chat_typing_indicator` and `chat_thread_list`. The behaviour follows
+  assistant-ui (MIT) and the agent visuals beautiful-ui (MIT), rebuilt for LiveView with the server
+  as the source of truth:
+  - the thread stays pinned to the newest message while an answer streams, lets go when you scroll
+    up, and keeps your place when older history loads above you
+  - answers stream as `push_event` deltas into `chat_stream`, not as a re-render of the whole text
+    for every token
+  - the composer sends on Enter (Shift+Enter adds a line), never sends half an IME word, and stops
+    a running answer on Escape
+  - reasoning opens while the model thinks and folds to "Thought for N seconds" afterwards, unless
+    you opened or closed it yourself
+  - a human-in-the-loop approval, tool calls with arguments and results, sources, attachments that
+    map onto LiveView uploads, copy/regenerate/feedback actions, and response branches
+
+  `/showcase/chat` wires all of them into one working chat, with a scripted model
 - The CMS bundle carries each attribute's own option list. A component's `args:` config already
   enumerates what `variant`, `color`, `size`, `rounded` and `padding` accept, and the exporter threw
   it away — a consumer had to recover the same lists from the `<%= if %>` gating around each helper
@@ -11,7 +29,7 @@
   attributes carried a value list before; 364 do now
 - The CMS bundle carries each component's `doc_url`, so a consumer can link to the page that explains
   the component it is offering
-- The daisyUI gallery paints all 92 headless components with daisyUI and Tailwind classes in the
+- The daisyUI gallery paints all 106 headless components with daisyUI and Tailwind classes in the
   examples' own markup. Copying an example gives you the component *and* its look; there is no
   stylesheet to take with it. The design system itself stays your dependency
 - A `*_class` attribute for every part a component renders, so any part can be restyled from
