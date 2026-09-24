@@ -98,8 +98,10 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
   `week`, `day`, `day-number`, `slot`, `axis`, `event`, `resizer`, `more`, `more-popover`,
   `popover`, `list-day`, `resource`, `now` and `status`.
 
-  Ships **no** colors or spacing: layout only. Style via `chelekom-full-calendar*` and the `data-*`
-  state attributes, or the per-part `*_class` attributes.
+  Ships **no** colors or spacing. The layout is Tailwind v4 classes in the markup itself, with no
+  stylesheet, and is tuned through CSS variables (`--fc-slot-height`, `--fc-row-min-height`, …).
+  Style via `chelekom-full-calendar*`, the `data-*` state attributes, or the per-part `*_class`
+  attributes.
 
   **Documentation:** https://mishka.tools/chelekom/docs/headless/full_calendar
   """
@@ -2095,17 +2097,26 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
       data-first={Date.to_iso8601(@model.first)}
       data-last={Date.to_iso8601(@model.last)}
       data-anchor={@anchor && iso(@anchor.start)}
-      class={["chelekom-full-calendar", @classes[:class]]}
+      class={[
+        "chelekom-full-calendar relative flex min-w-0 flex-col data-[dragging]:select-none",
+        @classes[:class]
+      ]}
       {@rest}
     >
-      <div data-part="toolbar" class={["chelekom-full-calendar__toolbar", @classes[:toolbar_class]]}>
-        <div data-part="nav">
+      <div
+        data-part="toolbar"
+        class={[
+          "chelekom-full-calendar__toolbar flex flex-wrap items-center justify-between",
+          @classes[:toolbar_class]
+        ]}
+      >
+        <div data-part="nav" class="inline-flex">
           <button
             type="button"
             data-part="previous"
             aria-label={@options.labels.previous}
             phx-click={JS.push("nav", value: %{to: "previous"}, target: @myself, loading: "##{@id}")}
-            class={["chelekom-full-calendar__nav-button", @classes[:nav_class]]}
+            class={["chelekom-full-calendar__nav-button rtl:-scale-x-100", @classes[:nav_class]]}
           >‹</button>
           <button
             type="button"
@@ -2118,7 +2129,7 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
             data-part="next"
             aria-label={@options.labels.next}
             phx-click={JS.push("nav", value: %{to: "next"}, target: @myself, loading: "##{@id}")}
-            class={["chelekom-full-calendar__nav-button", @classes[:nav_class]]}
+            class={["chelekom-full-calendar__nav-button rtl:-scale-x-100", @classes[:nav_class]]}
           >›</button>
         </div>
 
@@ -2136,6 +2147,7 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
           role="group"
           data-part="views"
           aria-label="View"
+          class="inline-flex"
         >
           <button
             :for={view <- @options.views}
@@ -2176,7 +2188,7 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
         data-view={@model.view}
         aria-labelledby={"#{@id}-title"}
         role="group"
-        class={["chelekom-full-calendar__view", @classes[:view_class]]}
+        class={["chelekom-full-calendar__view relative min-w-0", @classes[:view_class]]}
       >
         <.month_view :if={@model.view == "month"} {view_assigns(assigns)} />
         <.time_view :if={@model.view in ["week", "day", "resource_day"]} {view_assigns(assigns)} />
@@ -2444,19 +2456,27 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
   defp month_view(assigns) do
     ~H"""
     <div data-part="month" style={"--fc-cols: #{length(@model.weekdays)}"}>
-      <div data-part="header-row">
-        <span :if={@options.week_numbers} data-part="week-number"></span>
+      <div data-part="header-row" class="flex">
+        <span
+          :if={@options.week_numbers}
+          data-part="week-number"
+          class="w-[var(--fc-week-number-width,2rem)] flex-none"
+        ></span>
         <div
           :for={weekday <- @model.weekdays}
           data-part="header"
           title={weekday.long}
-          class={["chelekom-full-calendar__header", @classes[:header_class]]}
+          class={["chelekom-full-calendar__header min-w-0 flex-1", @classes[:header_class]]}
         >
           {weekday.short}
         </div>
       </div>
-      <div :for={{row, index} <- Enum.with_index(@model.rows)} data-part="week-wrap">
-        <span :if={@options.week_numbers} data-part="week-number">
+      <div :for={{row, index} <- Enum.with_index(@model.rows)} data-part="week-wrap" class="flex">
+        <span
+          :if={@options.week_numbers}
+          data-part="week-number"
+          class="w-[var(--fc-week-number-width,2rem)] flex-none"
+        >
           {@options.labels.week}{row.number}
         </span>
         <.day_lane
@@ -2479,6 +2499,7 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
   attr :grid, :string, required: true
   attr :id, :string, required: true
   attr :numbers, :boolean, default: false
+  attr :lane, :boolean, default: false, doc: "a thin row: the all-day lane or a timeline row"
   attr :myself, :any, required: true
   attr :options, :map, required: true
   attr :classes, :map, required: true
@@ -2488,7 +2509,16 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
     ~H"""
     <div
       data-part="week"
-      class={["chelekom-full-calendar__week", @classes[:week_class]]}
+      class={[
+        "chelekom-full-calendar__week relative grid min-w-0 flex-1",
+        "grid-cols-[repeat(var(--fc-cols),minmax(0,1fr))]",
+        "grid-rows-[auto_repeat(var(--fc-levels),auto)_auto_1fr]",
+        if(@lane,
+          do: "min-h-[var(--fc-lane-min-height,2.25rem)]",
+          else: "min-h-[var(--fc-row-min-height,6rem)]"
+        ),
+        @classes[:week_class]
+      ]}
       style={"--fc-cols: #{length(@row.hits)}; --fc-levels: #{max(@row.layout.levels, 1)}"}
     >
       <button
@@ -2520,7 +2550,11 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
         tabindex={if hit.focus, do: "0", else: "-1"}
         style={"--fc-col: #{hit.col + 1}"}
         phx-click={!hit.disabled && pick_js(hit, @myself)}
-        class={["chelekom-full-calendar__day", @classes[:day_class]]}
+        class={[
+          "chelekom-full-calendar__day relative col-[var(--fc-col)] row-[1/-1] flex min-w-0 flex-col",
+          "items-end justify-end data-[disabled]:cursor-not-allowed",
+          @classes[:day_class]
+        ]}
       >
         <span :if={hit.info && field(hit.info, :label)} data-part="day-info">
           {field(hit.info, :label)}
@@ -2541,7 +2575,11 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
           phx-click={
             JS.push("view", value: %{view: "day", date: Date.to_iso8601(hit.date)}, target: @myself)
           }
-          class={["chelekom-full-calendar__day-number", @classes[:day_number_class]]}
+          class={[
+            "chelekom-full-calendar__day-number relative z-1 col-[var(--fc-col)] row-start-1",
+            "justify-self-end",
+            @classes[:day_number_class]
+          ]}
         >{hit.number}</button>
         <span
           :for={hit <- @row.hits}
@@ -2551,7 +2589,11 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
           data-outside={hit.outside}
           aria-hidden="true"
           style={"--fc-col: #{hit.col + 1}"}
-          class={["chelekom-full-calendar__day-number", @classes[:day_number_class]]}
+          class={[
+            "chelekom-full-calendar__day-number pointer-events-none relative z-1 col-[var(--fc-col)]",
+            "row-start-1 justify-self-end",
+            @classes[:day_number_class]
+          ]}
         >{hit.number}</span>
       <% end %>
 
@@ -2576,7 +2618,11 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
           aria-controls={"#{@id}-more-#{col}"}
           style={"--fc-col: #{col + 1}"}
           phx-click={open_more("#{@id}-more-#{col}")}
-          class={["chelekom-full-calendar__more", @classes[:more_class]]}
+          class={[
+            "chelekom-full-calendar__more relative z-2 col-[var(--fc-col)]",
+            "row-[calc(var(--fc-levels)_+_2)] justify-self-start",
+            @classes[:more_class]
+          ]}
         >{String.replace(@options.labels.more, "%{count}", localize_number(count, @options))}</button>
         <div
           id={"#{@id}-more-#{col}"}
@@ -2588,7 +2634,11 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
           phx-click-away={close_more("#{@id}-more-#{col}")}
           phx-window-keydown={close_more("#{@id}-more-#{col}")}
           phx-key="Escape"
-          class={["chelekom-full-calendar__more-popover", @classes[:popover_class]]}
+          class={[
+            "chelekom-full-calendar__more-popover absolute start-0 top-0 z-25 col-[var(--fc-col)]",
+            "row-[1/-1] w-max max-w-72 min-w-full",
+            @classes[:popover_class]
+          ]}
         >
           <div data-part="more-title">{Enum.at(@row.hits, col).label}</div>
           <.event_chip
@@ -2636,17 +2686,18 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
     ~H"""
     <div
       data-part="scroller"
+      class="relative max-h-[var(--fc-scroll-height,36rem)] overflow-y-auto"
       style={"--fc-cols: #{length(@model.columns)}; --fc-slots: #{length(@model.axis)}"}
     >
-      <div data-part="head">
-        <div data-part="header-row">
-          <span data-part="corner"></span>
+      <div data-part="head" class="sticky top-0 z-5 bg-[var(--fc-head-background,Canvas)]">
+        <div data-part="header-row" class="flex">
+          <span data-part="corner" class="w-[var(--fc-axis-width,3.5rem)] flex-none"></span>
           <div
             :for={column <- @model.columns}
             data-part="header"
             data-today={column.today}
             data-resource={column.resource_id}
-            class={["chelekom-full-calendar__header", @classes[:header_class]]}
+            class={["chelekom-full-calendar__header min-w-0 flex-1", @classes[:header_class]]}
           >
             <span :if={column.title} data-part="header-resource">{column.title}</span>
             <span :if={is_nil(column.title) or @model.view != "resource_day"} data-part="header-date">
@@ -2656,14 +2707,21 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
           </div>
         </div>
 
-        <div :if={@options.all_day_slot} data-part="all-day">
-          <span data-part="axis" class={["chelekom-full-calendar__axis", @classes[:axis_class]]}>
+        <div :if={@options.all_day_slot} data-part="all-day" class="flex">
+          <span
+            data-part="axis"
+            class={[
+              "chelekom-full-calendar__axis w-[var(--fc-axis-width,3.5rem)] flex-none",
+              @classes[:axis_class]
+            ]}
+          >
             {@options.labels.all_day}
           </span>
           <.day_lane
             row={%{hits: @model.all_day_hits, layout: @model.all_day, more: %{}}}
             grid="all-day"
             id={"#{@id}-all-day"}
+            lane
             myself={@myself}
             options={@options}
             classes={@classes}
@@ -2672,12 +2730,18 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
         </div>
       </div>
 
-      <div data-part="body">
-        <div data-part="axis-column">
+      <div data-part="body" class="flex">
+        <div
+          data-part="axis-column"
+          class="flex w-[var(--fc-axis-width,3.5rem)] flex-none flex-col"
+        >
           <span
             :for={label <- @model.axis}
             data-part="axis"
-            class={["chelekom-full-calendar__axis", @classes[:axis_class]]}
+            class={[
+              "chelekom-full-calendar__axis h-[var(--fc-slot-height,2.5rem)] flex-none",
+              @classes[:axis_class]
+            ]}
           >{label}</span>
         </div>
 
@@ -2686,6 +2750,7 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
           data-part="column"
           data-today={column.today}
           data-resource={column.resource_id}
+          class="relative flex min-w-0 flex-1 flex-col"
         >
           <button
             :for={hit <- Enum.at(@model.slots, col)}
@@ -2713,7 +2778,10 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
             aria-pressed={@options.selectable != "none" && to_string(hit.selected)}
             tabindex={if hit.focus, do: "0", else: "-1"}
             phx-click={!hit.disabled && pick_js(hit, @myself)}
-            class={["chelekom-full-calendar__slot", @classes[:slot_class]]}
+            class={[
+              "chelekom-full-calendar__slot h-[var(--fc-slot-height,2.5rem)] w-full flex-none",
+              @classes[:slot_class]
+            ]}
           ></button>
 
           <div
@@ -2722,6 +2790,7 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
             data-status={bg.status}
             title={bg.title}
             style={"--fc-top: #{pct(bg.top)}; --fc-height: #{pct(bg.height)}; #{event_style(bg)}"}
+            class="pointer-events-none absolute inset-x-0 top-[calc(var(--fc-top)*1%)] z-1 h-[calc(var(--fc-height)*1%)]"
           >
           </div>
 
@@ -2746,7 +2815,11 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
             data-to={elem(@model.window, 1)}
             aria-hidden="true"
             style={"--fc-top: #{pct(@model.now.top)}"}
-            class={["chelekom-full-calendar__now", @classes[:now_class]]}
+            class={[
+              "chelekom-full-calendar__now pointer-events-none absolute inset-x-0",
+              "top-[calc(var(--fc-top)*1%)] z-3 h-0",
+              @classes[:now_class]
+            ]}
           >
           </div>
         </div>
@@ -2759,15 +2832,21 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
 
   defp timeline_view(assigns) do
     ~H"""
-    <div data-part="timeline" style={"--fc-cols: #{length(@model.days)}"}>
-      <div data-part="header-row">
-        <span data-part="corner"></span>
+    <div data-part="timeline" class="overflow-x-auto" style={"--fc-cols: #{length(@model.days)}"}>
+      <div
+        data-part="header-row"
+        class="flex min-w-[calc(var(--fc-resource-width,10rem)_+_var(--fc-cols)*var(--fc-day-min-width,2.75rem))]"
+      >
+        <span
+          data-part="corner"
+          class="sticky start-0 z-3 w-[var(--fc-resource-width,10rem)] flex-none bg-[var(--fc-head-background,Canvas)]"
+        ></span>
         <div
           :for={day <- @model.days}
           data-part="header"
           data-today={day.today}
           title={day.label}
-          class={["chelekom-full-calendar__header", @classes[:header_class]]}
+          class={["chelekom-full-calendar__header min-w-0 flex-1", @classes[:header_class]]}
         >
           <span data-part="header-weekday">{day.weekday}</span>
           <span data-part="header-day">{day.day}</span>
@@ -2777,10 +2856,15 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
         :for={{row, index} <- Enum.with_index(@model.rows)}
         data-part="timeline-row"
         data-resource={row.resource.id}
+        class="flex min-w-[calc(var(--fc-resource-width,10rem)_+_var(--fc-cols)*var(--fc-day-min-width,2.75rem))]"
       >
         <div
           data-part="resource"
-          class={["chelekom-full-calendar__resource", @classes[:resource_class]]}
+          class={[
+            "chelekom-full-calendar__resource sticky start-0 z-3 w-[var(--fc-resource-width,10rem)]",
+            "flex-none bg-[var(--fc-head-background,Canvas)]",
+            @classes[:resource_class]
+          ]}
         >
           {row.resource.title}
         </div>
@@ -2788,6 +2872,7 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
           row={row}
           grid="timeline"
           id={"#{@id}-r#{index}"}
+          lane
           myself={@myself}
           options={@options}
           classes={@classes}
@@ -2864,7 +2949,12 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
       aria-haspopup={@options.event_popover && "dialog"}
       style={@style}
       phx-click={JS.push("event_click", value: %{key: @occ.key}, target: @myself)}
-      class={["chelekom-full-calendar__event", @classes[:event_class]]}
+      class={[
+        "chelekom-full-calendar__event min-w-0 text-start data-[editable]:cursor-grab",
+        "data-[editable]:touch-none data-[dragging]:z-20 data-[dragging]:cursor-grabbing",
+        event_layout(@placement),
+        @classes[:event_class]
+      ]}
     >
       <%= if @event_content == [] do %>
         <span :if={not @occ.all_day} data-part="event-time">
@@ -2878,10 +2968,27 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
         :if={@occ.editable && @placement != "list" && !@cut_end}
         data-part="resizer"
         aria-hidden="true"
+        class={resizer_layout(@placement)}
       ></span>
     </button>
     """
   end
+
+  # Where an event sits depends on the grid it is in: a bar across day columns, a block placed by
+  # the time-grid layout, or a line in a list.
+  defp event_layout("row") do
+    "relative z-2 col-[var(--fc-col)/span_var(--fc-span)] row-[calc(var(--fc-level)_+_2)] truncate"
+  end
+
+  defp event_layout("time") do
+    "absolute z-2 top-[calc(var(--fc-top)*1%)] start-[calc(var(--fc-left)*1%)] " <>
+      "w-[calc(var(--fc-width)*1%)] h-[calc(var(--fc-height)*1%)] flex flex-col justify-start overflow-hidden"
+  end
+
+  defp event_layout(_list), do: "relative flex w-full gap-2 truncate"
+
+  defp resizer_layout("row"), do: "absolute inset-y-0 end-0 w-1.5 cursor-ew-resize"
+  defp resizer_layout(_time), do: "absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
 
   attr :occ, :map, required: true
   attr :id, :string, required: true
@@ -2903,7 +3010,11 @@ defmodule DevelopmentWeb.Components.Headless.FullCalendar do
       phx-key="Escape"
       phx-mounted={JS.focus_first()}
       style={event_style(@occ)}
-      class={["chelekom-full-calendar__popover", @classes[:popover_class]]}
+      class={[
+        "chelekom-full-calendar__popover absolute inset-x-0 top-12 z-30 mx-auto w-max",
+        "max-w-[min(24rem,calc(100%_-_2rem))]",
+        @classes[:popover_class]
+      ]}
     >
       <h3 id={"#{@id}-popover-title"} data-part="popover-title">
         {@occ.title}

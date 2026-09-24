@@ -8,7 +8,7 @@ A scheduler in one `Phoenix.LiveComponent`. It shows month, week, day, list, res
 mix mishka.ui.gen.headless full_calendar
 ```
 
-This generates `lib/<app>_web/components/headless/full_calendar.ex`: one file with no JS to wire up. The hook is a `Phoenix.LiveView.ColocatedHook` (LiveView ≥ 1.1). A Phoenix 1.8 app already imports `phoenix-colocated/<app>` in `app.js` and runs the `:phoenix_live_view` compiler. The layout rules come with `mishka_chelekom_headless.css`.
+This generates `lib/<app>_web/components/headless/full_calendar.ex`: one file with no JS to wire up. The hook is a `Phoenix.LiveView.ColocatedHook` (LiveView ≥ 1.1). A Phoenix 1.8 app already imports `phoenix-colocated/<app>` in `app.js` and runs the `:phoenix_live_view` compiler. There is no stylesheet: the layout is Tailwind v4 classes in the component's own markup.
 
 Render it through the wrapper or directly:
 
@@ -168,7 +168,7 @@ State attributes:
 - `data-status`, `data-cut-start` / `data-cut-end` (a bar continues into the next row);
 - `data-drop-target` and `data-selecting` (set by the hook while dragging).
 
-Layout knobs are CSS custom properties: `--fc-slot-height`, `--fc-row-min-height`, `--fc-lane-min-height`, `--fc-axis-width`, `--fc-scroll-height`, `--fc-resource-width`, `--fc-day-min-width`, `--fc-head-background`.
+The layout classes read CSS custom properties, which you can set from any class (e.g. `[--fc-slot-height:2rem]`): `--fc-slot-height`, `--fc-row-min-height`, `--fc-lane-min-height`, `--fc-axis-width`, `--fc-scroll-height`, `--fc-resource-width`, `--fc-day-min-width`, `--fc-head-background`.
 
 Every part takes a `*_class` attribute: `class`, `toolbar_class`, `title_class`, `nav_class`, `view_button_class`, `view_class`, `header_class`, `week_class`, `day_class`, `day_number_class`, `slot_class`, `axis_class`, `event_class`, `more_class`, `popover_class`, `list_day_class`, `resource_class`, `now_class` and `status_class`.
 
