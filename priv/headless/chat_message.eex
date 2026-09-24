@@ -95,7 +95,7 @@ defmodule <%= @module %> do
       data-role={@role}
       data-status={@status}
       data-last={@last}
-      class={["chelekom-chat-message", @class]}
+      class={["chelekom-chat-message group/message", @class]}
       {@rest}
     >
       <div :if={@avatar != []} data-part="avatar" class={["chelekom-chat-message__avatar", @avatar_class]}>

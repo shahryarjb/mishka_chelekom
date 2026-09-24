@@ -31,8 +31,8 @@ defmodule <%= @module %> do
   Scroll it from the server with
   `push_event(socket, "chelekom:chat-thread", %{id: "thread", scroll: "bottom"})`.
 
-  The `empty` part shows only while `messages` has no children (a `:has()` rule in the headless
-  stylesheet), so it needs no assign and works with streams.
+  The `empty` part shows only while `messages` has no children (a Tailwind `group-has-*`
+  variant, i.e. `:has()`), so it needs no assign and works with streams.
 
   Parts: `viewport`, `messages`, `empty`, `scroll-button`, `footer`.
 
@@ -91,7 +91,7 @@ defmodule <%= @module %> do
       data-running={@running}
       data-auto-scroll={to_string(@auto_scroll)}
       data-on-top={@on_top}
-      class={["chelekom-chat-thread", @class]}
+      class={["chelekom-chat-thread group/thread relative flex min-h-0 flex-col", @class]}
       {@rest}
     >
       <div
@@ -99,9 +99,15 @@ defmodule <%= @module %> do
         role="region"
         aria-label={@label}
         tabindex="0"
-        class={["chelekom-chat-thread__viewport", @viewport_class]}
+        class={[
+          "chelekom-chat-thread__viewport min-h-0 flex-auto overflow-y-auto overscroll-contain",
+          @viewport_class
+        ]}
       >
-        <div :if={@empty != []} data-part="empty" class={["chelekom-chat-thread__empty", @empty_class]}>
+        <div :if={@empty != []} data-part="empty" class={[
+            "chelekom-chat-thread__empty group-has-[[data-part=messages]>*]/thread:hidden",
+            @empty_class
+          ]}>
           {render_slot(@empty)}
         </div>
         <div

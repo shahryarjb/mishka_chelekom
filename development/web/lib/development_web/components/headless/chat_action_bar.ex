@@ -18,8 +18,8 @@ defmodule DevelopmentWeb.Components.Headless.ChatActionBar do
 
   `autohide` hides the bar until the message is hovered or focused: `always`, `not_last` (the
   newest message keeps its actions visible — pair with `chat_message`'s `last`), or `never`. The
-  rule lives in the headless stylesheet and uses `visibility`, so nothing shifts on hover and the
-  buttons stay reachable by keyboard focus.
+  rule is a Tailwind `group/message` variant on the bar itself and uses `invisible`, so nothing
+  shifts on hover and the buttons stay reachable by keyboard focus.
 
   Parts: `copy`, `copy-status`, `action`.
 
@@ -87,7 +87,7 @@ defmodule DevelopmentWeb.Components.Headless.ChatActionBar do
       data-copy-from={@copy_from}
       data-copied-label={@copied_label}
       data-copied-duration={@copied_duration}
-      class={["chelekom-chat-action-bar", @class]}
+      class={["chelekom-chat-action-bar", autohide_class(@autohide), @class]}
       {@rest}
     >
       <button
@@ -126,4 +126,14 @@ defmodule DevelopmentWeb.Components.Headless.ChatActionBar do
     </div>
     """
   end
+
+  # Auto-hidden actions stay in the layout (`invisible`, not `hidden`), so nothing jumps on hover,
+  # and focus-within keeps them reachable from the keyboard. They answer to the enclosing
+  # `chat_message` (its `group/message`).
+  defp autohide_class("always"), do: "group-[:not(:hover):not(:focus-within)]/message:invisible"
+
+  defp autohide_class("not_last"),
+    do: "group-[:not([data-last]):not(:hover):not(:focus-within)]/message:invisible"
+
+  defp autohide_class(_never), do: nil
 end

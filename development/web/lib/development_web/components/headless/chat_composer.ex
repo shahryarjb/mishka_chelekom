@@ -114,7 +114,7 @@ defmodule DevelopmentWeb.Components.Headless.ChatComposer do
         data-part="input"
         data-min-rows={@min_rows}
         data-max-rows={@max_rows}
-        class={["chelekom-chat-composer__input", @input_class]}
+        class={["chelekom-chat-composer__input resize-none", @input_class]}
       >{@value}</textarea>
 
       <div data-part="actions" class={["chelekom-chat-composer__actions", @actions_class]}>

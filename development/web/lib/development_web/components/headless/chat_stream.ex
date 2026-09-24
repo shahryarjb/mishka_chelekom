@@ -35,8 +35,8 @@ defmodule DevelopmentWeb.Components.Headless.ChatStream do
 
   Parts: `text`, `caret`.
 
-  Ships **no** colors, sizing or spacing — style via `chelekom-chat-stream*`. The headless
-  stylesheet sets `white-space: pre-wrap` on `text` so newlines survive.
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-stream*`. `text` carries
+  `whitespace-pre-wrap` so newlines survive.
 
   **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_stream
   """
@@ -78,7 +78,7 @@ defmodule DevelopmentWeb.Components.Headless.ChatStream do
       data-root-id={@id}
       data-text={@text}
       data-smooth={@smooth}
-      class={["chelekom-chat-stream__text", @text_class]}
+      class={["chelekom-chat-stream__text whitespace-pre-wrap wrap-anywhere", @text_class]}
     >{@text}</span><span
       :if={!@done && @show_caret}
       data-part="caret"

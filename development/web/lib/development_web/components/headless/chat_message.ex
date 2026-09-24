@@ -101,7 +101,7 @@ defmodule DevelopmentWeb.Components.Headless.ChatMessage do
       data-role={@role}
       data-status={@status}
       data-last={@last}
-      class={["chelekom-chat-message", @class]}
+      class={["chelekom-chat-message group/message", @class]}
       {@rest}
     >
       <div
