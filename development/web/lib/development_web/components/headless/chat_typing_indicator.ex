@@ -1,0 +1,65 @@
+defmodule DevelopmentWeb.Components.Headless.ChatTypingIndicator do
+  @moduledoc """
+  Headless **chat_typing_indicator** — "the assistant is working on it".
+
+  The three bouncing dots (or a shimmering "Thinking…") shown between sending a message and the
+  first token arriving. It is a polite `role="status"`, so a screen reader hears `label` once
+  instead of silence; the dots themselves are hidden from assistive tech and carry `data-index`
+  and `--index` so a skin can stagger their animation with no extra markup.
+
+      <.chat_typing_indicator :if={@waiting} label="Assistant is thinking" />
+
+  Parts: `dot`, `label`.
+
+  Ships **no** colors, sizing, spacing or animation — style via `chelekom-chat-typing-indicator*`.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_typing_indicator
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :label, :string, default: "Assistant is typing", doc: "What the status announces"
+
+  attr :show_label, :boolean,
+    default: false,
+    doc: "Show the label visibly (otherwise screen-reader only)"
+
+  attr :dots, :integer, default: 3, doc: "How many dots to render"
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :dot_class, :any, default: nil, doc: ~s|Extra classes for every `data-part="dot"`|
+  attr :label_class, :any, default: nil, doc: ~s|Extra classes for `data-part="label"`|
+  attr :rest, :global
+
+  def chat_typing_indicator(assigns) do
+    ~H"""
+    <div
+      role="status"
+      aria-live="polite"
+      data-part="root"
+      class={["chelekom-chat-typing-indicator", @class]}
+      {@rest}
+    >
+      <span
+        :for={index <- 1..max(@dots, 1)//1}
+        :if={@dots > 0}
+        aria-hidden="true"
+        data-part="dot"
+        data-index={index}
+        style={"--index:#{index - 1};"}
+        class={["chelekom-chat-typing-indicator__dot", @dot_class]}
+      ></span>
+      <span
+        data-part="label"
+        class={[
+          !@show_label && "chelekom-sr-only",
+          "chelekom-chat-typing-indicator__label",
+          @label_class
+        ]}
+      >
+        {@label}
+      </span>
+    </div>
+    """
+  end
+end

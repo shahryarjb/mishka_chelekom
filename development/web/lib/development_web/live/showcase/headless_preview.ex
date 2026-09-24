@@ -2336,6 +2336,7 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
   def has_examples?("mask_input"), do: true
   def has_examples?("pills_input"), do: true
   def has_examples?("chart"), do: true
+  def has_examples?("chat_thread"), do: true
   def has_examples?("sparkline"), do: true
   def has_examples?(_), do: false
 
@@ -4061,6 +4062,22 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
         </div>
       </details>
     </div>
+    """
+  end
+
+  def examples(%{component: "chat_thread"} = assigns) do
+    ~H"""
+    <p class="text-sm text-[var(--c-base-content)]/70">
+      Every chat component — thread, message, streaming, composer, reasoning, tool call, approval,
+      sources, suggestions, attachments, action bar, branch picker and the conversation list —
+      wired into one working AI chat with a scripted model:
+    </p>
+    <.link
+      navigate={~p"/showcase/chat"}
+      class="mt-3 inline-flex rounded-lg border border-[var(--c-base-300)] px-3 py-2 text-sm font-medium hover:bg-[var(--c-base-200)]"
+    >
+      Open the AI chat demo →
+    </.link>
     """
   end
 

@@ -1,0 +1,139 @@
+defmodule <%= @module %> do
+  @moduledoc """
+  Headless **chat_composer** — where the user writes the next message.
+
+  A `<form>` around an auto-growing `<textarea>`, a send button and a stop button, with the
+  keyboard behaviour people expect from AI chats (assistant-ui's contract):
+
+    * `submit_mode="enter"` (default) — Enter sends, Shift+Enter inserts a newline
+    * `submit_mode="ctrl_enter"` — Ctrl/Cmd+Enter sends, Enter inserts a newline
+    * `submit_mode="none"` — only the send button sends
+    * Enter never sends while an IME is composing a word, while `running`, or when the box is blank
+    * Escape while `running` sends `on_cancel` — the same event as the stop button
+
+  The send button is `disabled` while the box is blank, and the box is cleared after a send
+  (LiveView never overwrites a focused input's value, so the server could not clear it).
+
+  `on_submit` receives `%{"message" => text}` (the key is `name`). Attachments fit in the
+  `:attachments` slot and the upload button in `:leading` — `live_file_input` works as is, and
+  passing `phx-drop-target={@uploads.files.ref}` makes the whole composer a drop zone.
+
+      <.chat_composer id="composer" on_submit="send" on_cancel="stop" running={@running}>
+        <:send>↑</:send>
+        <:cancel>■</:cancel>
+      </.chat_composer>
+
+  Parts: `attachments`, `input`, `actions`, `send`, `cancel`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-composer*`.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_composer
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :id, :string, required: true, doc: "Unique id (carries the ChatComposer hook)"
+  attr :name, :string, default: "message", doc: "Form field name of the text"
+  attr :value, :string, default: "", doc: "Initial text"
+  attr :placeholder, :string, default: "Send a message…", doc: "Textarea placeholder"
+  attr :label, :string, default: "Message", doc: "Accessible name of the textarea"
+  attr :on_submit, :string, default: nil, doc: "LiveView event for phx-submit"
+  attr :on_change, :string, default: nil, doc: "LiveView event for phx-change (drafts, typing state)"
+  attr :on_cancel, :string, default: nil, doc: "LiveView event for the stop button and Escape"
+  attr :target, :any, default: nil, doc: "phx-target for the form and the stop button"
+  attr :running, :boolean, default: false, doc: "A run is in progress: shows stop, blocks sending"
+  attr :disabled, :boolean, default: false, doc: "Disable the whole composer"
+
+  attr :submit_mode, :string,
+    default: "enter",
+    values: ~w(enter ctrl_enter none),
+    doc: "Which key combination sends"
+
+  attr :min_rows, :integer, default: 1, doc: "Rows the textarea never shrinks below"
+  attr :max_rows, :integer, default: 8, doc: "Rows after which the textarea scrolls"
+  attr :clear_on_submit, :boolean, default: true, doc: "Empty the box after a send"
+  attr :autofocus, :boolean, default: false, doc: "Focus the textarea on mount"
+  attr :send_label, :string, default: "Send", doc: "Accessible name of the send button"
+  attr :cancel_label, :string, default: "Stop", doc: "Accessible name of the stop button"
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :attachments_class, :any, default: nil, doc: ~s|Extra classes for `data-part="attachments"`|
+  attr :input_class, :any, default: nil, doc: ~s|Extra classes for `data-part="input"`|
+  attr :actions_class, :any, default: nil, doc: ~s|Extra classes for `data-part="actions"`|
+  attr :send_class, :any, default: nil, doc: ~s|Extra classes for `data-part="send"`|
+  attr :cancel_class, :any, default: nil, doc: ~s|Extra classes for `data-part="cancel"`|
+  attr :rest, :global, include: ~w(phx-drop-target)
+
+  slot :attachments, doc: "Pending attachments, shown above the textarea"
+  slot :leading, doc: "Controls before the send button (attach, model picker, …)"
+  slot :send, doc: "Content of the send button (defaults to `send_label`)"
+  slot :cancel, doc: "Content of the stop button (defaults to `cancel_label`)"
+
+  def <%= @component_prefix %>chat_composer(assigns) do
+    ~H"""
+    <form
+      id={@id}
+      phx-hook="ChatComposer"
+      phx-submit={@on_submit}
+      phx-change={@on_change}
+      phx-target={@target}
+      data-part="root"
+      data-submit-mode={@submit_mode}
+      data-running={@running}
+      data-disabled={@disabled}
+      data-empty={@value == ""}
+      data-on-cancel={@on_cancel}
+      data-clear-on-submit={to_string(@clear_on_submit)}
+      class={["chelekom-chat-composer", @class]}
+      {@rest}
+    >
+      <div
+        :if={@attachments != []}
+        data-part="attachments"
+        class={["chelekom-chat-composer__attachments", @attachments_class]}
+      >
+        {render_slot(@attachments)}
+      </div>
+
+      <textarea
+        id={"#{@id}-input"}
+        name={@name}
+        rows={@min_rows}
+        placeholder={@placeholder}
+        aria-label={@label}
+        disabled={@disabled}
+        autofocus={@autofocus}
+        data-part="input"
+        data-min-rows={@min_rows}
+        data-max-rows={@max_rows}
+        class={["chelekom-chat-composer__input", @input_class]}
+      >{@value}</textarea>
+
+      <div data-part="actions" class={["chelekom-chat-composer__actions", @actions_class]}>
+        {render_slot(@leading)}
+        <button
+          :if={@running && @on_cancel}
+          type="button"
+          phx-click={@on_cancel}
+          phx-target={@target}
+          aria-label={@cancel_label}
+          data-part="cancel"
+          class={["chelekom-chat-composer__cancel", @cancel_class]}
+        >
+          {if @cancel != [], do: render_slot(@cancel), else: @cancel_label}
+        </button>
+        <button
+          :if={!@running || !@on_cancel}
+          type="submit"
+          aria-label={@send_label}
+          disabled={@disabled || @running || @value == ""}
+          data-part="send"
+          class={["chelekom-chat-composer__send", @send_class]}
+        >
+          {if @send != [], do: render_slot(@send), else: @send_label}
+        </button>
+      </div>
+    </form>
+    """
+  end
+end

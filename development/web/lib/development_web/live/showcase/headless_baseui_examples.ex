@@ -97,6 +97,20 @@ defmodule DevelopmentWeb.Showcase.HeadlessBaseUIExamples do
   import DevelopmentWeb.Components.Headless.Tree
   import DevelopmentWeb.Components.Headless.TreeSelect
   import DevelopmentWeb.Components.Headless.VisuallyHidden
+  import DevelopmentWeb.Components.Headless.ChatActionBar
+  import DevelopmentWeb.Components.Headless.ChatApproval
+  import DevelopmentWeb.Components.Headless.ChatAttachment
+  import DevelopmentWeb.Components.Headless.ChatBranchPicker
+  import DevelopmentWeb.Components.Headless.ChatComposer
+  import DevelopmentWeb.Components.Headless.ChatMessage
+  import DevelopmentWeb.Components.Headless.ChatReasoning
+  import DevelopmentWeb.Components.Headless.ChatSources
+  import DevelopmentWeb.Components.Headless.ChatStream
+  import DevelopmentWeb.Components.Headless.ChatSuggestions
+  import DevelopmentWeb.Components.Headless.ChatThread
+  import DevelopmentWeb.Components.Headless.ChatThreadList
+  import DevelopmentWeb.Components.Headless.ChatToolCall
+  import DevelopmentWeb.Components.Headless.ChatTypingIndicator
 
   alias DevelopmentWeb.Showcase.ExampleSource
   alias Phoenix.LiveView.JS
@@ -728,6 +742,68 @@ defmodule DevelopmentWeb.Showcase.HeadlessBaseUIExamples do
 
   def sections("visually_hidden"),
     do: [{"visually_hidden-hero", "Hero", "A button whose text label is screen-reader-only."}]
+
+  def sections("chat_action_bar"),
+    do: [
+      {"chat_action_bar-live", "Copy, retry, feedback",
+       "Copy is built in; retry and the thumbs are toggle buttons sending events."}
+    ]
+
+  def sections("chat_approval"),
+    do: [
+      {"chat_approval-live", "A question", "Radio options plus a free-text answer."},
+      {"chat_approval-confirm-live", "Approve or deny", "A tool call waiting for a human."}
+    ]
+
+  def sections("chat_attachment"),
+    do: [{"chat_attachment-live", "Files", "A finished file and one still uploading."}]
+
+  def sections("chat_branch_picker"),
+    do: [{"chat_branch_picker-live", "Versions", "Step between regenerated answers."}]
+
+  def sections("chat_composer"),
+    do: [
+      {"chat_composer-live", "Composer",
+       "Enter sends, Shift+Enter adds a line; blank never sends."},
+      {"chat_composer-running-live", "While answering", "Stop replaces send; Escape stops too."}
+    ]
+
+  def sections("chat_message"),
+    do: [
+      {"chat_message-hero", "Hero", "A question and its answer."},
+      {"chat_message-streaming", "Streaming", "aria-busy and a caret while text arrives."},
+      {"chat_message-error", "Error", "A failed answer with its alert."}
+    ]
+
+  def sections("chat_reasoning"),
+    do: [
+      {"chat_reasoning-hero", "Thought", "Folded once done; the trace stays expandable."},
+      {"chat_reasoning-streaming", "Thinking", "Open while the model searches."}
+    ]
+
+  def sections("chat_sources"),
+    do: [{"chat_sources-hero", "Sources", "Numbered citations, opening in a new tab."}]
+
+  def sections("chat_stream"),
+    do: [{"chat_stream-hero", "Streamed text", "Pushed deltas append; newlines survive."}]
+
+  def sections("chat_suggestions"),
+    do: [{"chat_suggestions-live", "Suggestions", "Starter prompts that send on click."}]
+
+  def sections("chat_thread"),
+    do: [{"chat_thread-hero", "Hero", "Messages pinned to the bottom, composer in the footer."}]
+
+  def sections("chat_thread_list"),
+    do: [{"chat_thread_list-live", "Conversations", "The sidebar history with delete."}]
+
+  def sections("chat_tool_call"),
+    do: [
+      {"chat_tool_call-hero", "Finished call", "Arguments and result behind the summary."},
+      {"chat_tool_call-running", "Running", "aria-busy while the tool works."}
+    ]
+
+  def sections("chat_typing_indicator"),
+    do: [{"chat_typing_indicator-hero", "Typing", "Three staggered dots and a polite status."}]
 
   def sections(_), do: []
 
@@ -7209,7 +7285,432 @@ defmodule DevelopmentWeb.Showcase.HeadlessBaseUIExamples do
     """
   end
 
+  # ── chat_thread ───────────────────────────────────────────────────────────
+  def example(%{section: "chat_thread-hero"} = assigns) do
+    ~H"""
+    <.chat_thread
+      id="baseui-chat-thread-hero"
+      class="h-96 w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white text-neutral-950 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
+      viewport_class="px-4 py-3"
+      messages_class="flex flex-col gap-3"
+      empty_class="py-10 text-center text-sm text-neutral-500"
+      scroll_button_class="absolute bottom-20 left-1/2 -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs shadow-sm dark:border-neutral-700 dark:bg-neutral-900"
+      footer_class="border-t border-neutral-200 p-3 dark:border-neutral-800"
+    >
+      <.chat_message
+        :for={{id, role, text} <- chat_sample_messages()}
+        id={"baseui-chat-thread-hero-#{id}"}
+        role={role}
+        class="flex data-[role=user]:justify-end"
+        content_class="max-w-[80%] rounded-2xl px-3 py-2 text-sm bg-neutral-100 dark:bg-neutral-800 [[data-role=user]_&]:bg-neutral-900 [[data-role=user]_&]:text-white dark:[[data-role=user]_&]:bg-white dark:[[data-role=user]_&]:text-neutral-950"
+      >
+        {text}
+      </.chat_message>
+      <:empty>How can I help today?</:empty>
+      <:footer>
+        <.chat_composer
+          id="baseui-chat-thread-hero-composer"
+          on_submit="chat_send"
+          class="flex items-end gap-2 rounded-xl border border-neutral-200 px-3 py-2 dark:border-neutral-700"
+          input_class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400"
+          send_class="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40 dark:bg-white dark:text-neutral-950"
+        />
+      </:footer>
+    </.chat_thread>
+    """
+  end
+
+  # ── chat_message ──────────────────────────────────────────────────────────
+  def example(%{section: "chat_message-hero"} = assigns) do
+    ~H"""
+    <div class="flex w-full max-w-md flex-col gap-4 text-neutral-950 dark:text-white">
+      <.chat_message
+        role="user"
+        name="You"
+        timestamp="2026-09-24T09:41:00"
+        class="flex flex-row-reverse gap-2"
+        body_class="flex flex-col items-end gap-1"
+        header_class="flex gap-2 text-xs text-neutral-500"
+        content_class="rounded-2xl bg-neutral-900 px-3 py-2 text-sm text-white dark:bg-white dark:text-neutral-950"
+      >
+        Which flavor should we launch this summer?
+      </.chat_message>
+      <.chat_message
+        role="assistant"
+        name="Assistant"
+        timestamp="2026-09-24T09:41:05"
+        last
+        class="flex gap-2"
+        avatar_class="flex size-7 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-xs dark:bg-neutral-800"
+        body_class="flex flex-col gap-1"
+        header_class="flex gap-2 text-xs text-neutral-500"
+        content_class="text-sm leading-relaxed"
+      >
+        <:avatar>AI</:avatar>
+        Pistachio — sales are up 23% this month and its margin beats vanilla by 8 points.
+      </.chat_message>
+    </div>
+    """
+  end
+
+  def example(%{section: "chat_message-streaming"} = assigns) do
+    ~H"""
+    <.chat_message
+      role="assistant"
+      status="streaming"
+      class="w-full max-w-md text-neutral-950 dark:text-white"
+      content_class="text-sm leading-relaxed"
+      caret_class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-neutral-900 align-middle dark:bg-white"
+    >
+      Stone-fruit flavors are trending in the same range, with peach
+    </.chat_message>
+    """
+  end
+
+  def example(%{section: "chat_message-error"} = assigns) do
+    ~H"""
+    <.chat_message
+      role="assistant"
+      status="error"
+      class="w-full max-w-md text-neutral-950 dark:text-white"
+      content_class="text-sm text-neutral-500"
+      error_class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+    >
+      The answer was cut off.
+      <:error>The model timed out. Try again in a moment.</:error>
+    </.chat_message>
+    """
+  end
+
+  # ── chat_stream ───────────────────────────────────────────────────────────
+  def example(%{section: "chat_stream-hero"} = assigns) do
+    ~H"""
+    <p class="w-full max-w-md text-sm leading-relaxed text-neutral-950 dark:text-white">
+      <.chat_stream
+        id="baseui-chat-stream-hero"
+        text={"Pistachio is your fastest-growing flavor." <> "\n" <> "Push it to the front of the freezer."}
+        class="block"
+        caret_class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-neutral-900 align-middle dark:bg-white"
+      />
+    </p>
+    """
+  end
+
+  # ── chat_composer ─────────────────────────────────────────────────────────
+  def example(%{section: "chat_composer-live"} = assigns) do
+    ~H"""
+    <.chat_composer
+      id="baseui-chat-composer-live"
+      on_submit="chat_send"
+      placeholder="Ask anything — Enter sends, Shift+Enter adds a line"
+      class="flex w-full max-w-md items-end gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-neutral-950 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+      input_class="min-w-0 flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-neutral-400"
+      actions_class="flex items-center gap-1"
+      send_class="flex size-8 items-center justify-center rounded-full bg-neutral-900 text-white disabled:opacity-30 dark:bg-white dark:text-neutral-950"
+    >
+      <:send>↑</:send>
+    </.chat_composer>
+    """
+  end
+
+  def example(%{section: "chat_composer-running-live"} = assigns) do
+    ~H"""
+    <.chat_composer
+      id="baseui-chat-composer-running"
+      on_submit="chat_send"
+      on_cancel="chat_stop"
+      running
+      class="flex w-full max-w-md items-end gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-neutral-950 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+      input_class="min-w-0 flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-neutral-400"
+      cancel_class="flex size-8 items-center justify-center rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-950"
+    >
+      <:cancel>■</:cancel>
+    </.chat_composer>
+    """
+  end
+
+  # ── chat_action_bar ───────────────────────────────────────────────────────
+  def example(%{section: "chat_action_bar-live"} = assigns) do
+    ~H"""
+    <.chat_action_bar
+      id="baseui-chat-action-bar-live"
+      copy="Pistachio is your fastest-growing flavor."
+      class="flex items-center gap-1 text-neutral-600 dark:text-neutral-300"
+      copy_class="rounded-md px-2 py-1 text-xs hover:bg-neutral-100 data-[copied]:text-green-600 dark:hover:bg-neutral-800"
+      action_class="rounded-md px-2 py-1 text-xs hover:bg-neutral-100 aria-pressed:bg-neutral-900 aria-pressed:text-white dark:hover:bg-neutral-800 dark:aria-pressed:bg-white dark:aria-pressed:text-neutral-950"
+    >
+      <:action label="Regenerate" on_click="chat_regenerate" value="m-2">↻ Retry</:action>
+      <:action label="Good answer" on_click="chat_rate" value="up" pressed>👍</:action>
+      <:action label="Bad answer" on_click="chat_rate" value="down" pressed={false}>👎</:action>
+    </.chat_action_bar>
+    """
+  end
+
+  # ── chat_branch_picker ────────────────────────────────────────────────────
+  def example(%{section: "chat_branch_picker-live"} = assigns) do
+    ~H"""
+    <.chat_branch_picker
+      index={2}
+      count={3}
+      value="m-2"
+      on_previous="chat_branch_previous"
+      on_next="chat_branch_next"
+      class="inline-flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-300"
+      previous_class="rounded px-1.5 py-0.5 hover:bg-neutral-100 disabled:opacity-30 dark:hover:bg-neutral-800"
+      next_class="rounded px-1.5 py-0.5 hover:bg-neutral-100 disabled:opacity-30 dark:hover:bg-neutral-800"
+      status_class="tabular-nums"
+    />
+    """
+  end
+
+  # ── chat_reasoning ────────────────────────────────────────────────────────
+  def example(%{section: "chat_reasoning-hero"} = assigns) do
+    ~H"""
+    <.chat_reasoning
+      id="baseui-chat-reasoning-hero"
+      duration={4}
+      open
+      class="w-full max-w-md text-neutral-950 dark:text-white"
+      trigger_class="flex cursor-pointer items-center gap-2 text-sm font-medium text-neutral-500"
+      content_class="mt-2 border-l-2 border-neutral-200 pl-3 text-sm dark:border-neutral-800"
+      steps_class="flex flex-col gap-1.5"
+      step_class="flex items-baseline gap-2"
+      step_detail_class="text-xs text-neutral-500"
+    >
+      <:step label="Reading flavor briefs" />
+      <:step label="Comparing tasting notes" detail="6 flavors" />
+      <:step label="Writing the scoop report" />
+    </.chat_reasoning>
+    """
+  end
+
+  def example(%{section: "chat_reasoning-streaming"} = assigns) do
+    ~H"""
+    <.chat_reasoning
+      id="baseui-chat-reasoning-streaming"
+      status="streaming"
+      label="Searching the web"
+      class="w-full max-w-md text-neutral-950 dark:text-white"
+      trigger_class="flex cursor-pointer items-center gap-2 text-sm font-medium"
+      label_class="animate-pulse text-neutral-500"
+      content_class="mt-2 border-l-2 border-neutral-200 pl-3 text-sm dark:border-neutral-800"
+      steps_class="flex flex-col gap-1.5"
+      step_class="flex items-baseline gap-2 data-[status=active]:font-medium"
+      step_label_class="underline-offset-2 hover:underline"
+      step_detail_class="text-xs text-neutral-500"
+    >
+      <:step label="best waffle cone supplier" detail="query" />
+      <:step label="Joy Cone" detail="joycone.com" href="https://joycone.com/" />
+      <:step
+        label="The Konery"
+        detail="thekonery.com"
+        href="https://www.thekonery.com/"
+        status="active"
+      />
+    </.chat_reasoning>
+    """
+  end
+
+  # ── chat_tool_call ────────────────────────────────────────────────────────
+  def example(%{section: "chat_tool_call-hero"} = assigns) do
+    ~H"""
+    <.chat_tool_call
+      name="read_file"
+      label="Read ChurnSchedule.tsx"
+      status="success"
+      duration={320}
+      args={%{"path" => "src/ChurnSchedule.tsx"}}
+      output="204 lines"
+      class="w-full max-w-md rounded-lg border border-neutral-200 text-sm text-neutral-950 dark:border-neutral-800 dark:text-white"
+      trigger_class="flex cursor-pointer items-center gap-2 px-3 py-2"
+      name_class="font-mono text-xs"
+      label_class="flex-1 truncate text-neutral-500"
+      status_class="text-xs text-green-600 dark:text-green-400"
+      duration_class="text-xs tabular-nums text-neutral-400"
+      content_class="flex flex-col gap-2 border-t border-neutral-200 px-3 py-2 dark:border-neutral-800"
+      heading_class="text-xs font-medium text-neutral-500"
+      args_class="flex flex-col gap-1 font-mono text-xs"
+      result_class="flex flex-col gap-1 font-mono text-xs"
+    />
+    """
+  end
+
+  def example(%{section: "chat_tool_call-running"} = assigns) do
+    ~H"""
+    <.chat_tool_call
+      name="web_search"
+      label="Searching the web"
+      status="running"
+      class="w-full max-w-md rounded-lg border border-neutral-200 text-sm text-neutral-950 dark:border-neutral-800 dark:text-white"
+      trigger_class="flex cursor-pointer items-center gap-2 px-3 py-2"
+      name_class="font-mono text-xs"
+      label_class="flex-1 truncate text-neutral-500"
+      status_class="animate-pulse text-xs text-neutral-500"
+    />
+    """
+  end
+
+  # ── chat_approval ─────────────────────────────────────────────────────────
+  def example(%{section: "chat_approval-live"} = assigns) do
+    ~H"""
+    <.chat_approval
+      id="baseui-chat-approval-live"
+      title="Which market do we enter first?"
+      on_submit="chat_answer"
+      on_deny="chat_skip"
+      allow_custom
+      class="w-full max-w-md rounded-xl border border-neutral-200 p-4 text-neutral-950 dark:border-neutral-800 dark:text-white"
+      fieldset_class="flex flex-col gap-3"
+      title_class="text-sm font-medium"
+      options_class="flex flex-col gap-1"
+      option_class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-900"
+      option_description_class="ml-auto text-xs text-neutral-500"
+      custom_class="rounded-lg border border-neutral-200 bg-transparent px-2 py-1.5 text-sm dark:border-neutral-700"
+      actions_class="flex justify-end gap-2"
+      deny_class="rounded-full px-3 py-1.5 text-xs text-neutral-500"
+      approve_class="rounded-full bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white dark:bg-white dark:text-neutral-950"
+    >
+      <:option value="trucks" label="Food trucks" />
+      <:option value="grocery" label="Grocery freezers" description="needs a distributor" />
+      <:option value="shops" label="Scoop shops" />
+    </.chat_approval>
+    """
+  end
+
+  def example(%{section: "chat_approval-confirm-live"} = assigns) do
+    ~H"""
+    <.chat_approval
+      id="baseui-chat-approval-confirm"
+      title="Run `rm -rf build/`?"
+      description="The agent wants to delete the build directory before rebuilding."
+      on_submit="chat_approve"
+      on_deny="chat_deny"
+      class="w-full max-w-md rounded-xl border border-neutral-200 p-4 text-neutral-950 dark:border-neutral-800 dark:text-white"
+      fieldset_class="flex flex-col gap-2"
+      title_class="text-sm font-medium"
+      description_class="text-xs text-neutral-500"
+      actions_class="mt-1 flex justify-end gap-2"
+      deny_class="rounded-full border border-neutral-200 px-3 py-1.5 text-xs dark:border-neutral-700"
+      approve_class="rounded-full bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white dark:bg-white dark:text-neutral-950"
+    />
+    """
+  end
+
+  # ── chat_suggestions ──────────────────────────────────────────────────────
+  def example(%{section: "chat_suggestions-live"} = assigns) do
+    ~H"""
+    <.chat_suggestions
+      on_select="chat_suggestion"
+      class="grid w-full max-w-md grid-cols-2 gap-2 text-neutral-950 dark:text-white"
+      suggestion_class="flex flex-col items-start gap-0.5 rounded-xl border border-neutral-200 px-3 py-2 text-left hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+      title_class="text-sm font-medium"
+      description_class="text-xs text-neutral-500"
+    >
+      <:suggestion
+        prompt="Which flavors sell best in winter?"
+        title="Winter bestsellers"
+        description="by region"
+      />
+      <:suggestion
+        prompt="Compare gelato and soft serve margins"
+        title="Gelato vs soft serve"
+        description="margins"
+      />
+    </.chat_suggestions>
+    """
+  end
+
+  # ── chat_attachment ───────────────────────────────────────────────────────
+  def example(%{section: "chat_attachment-live"} = assigns) do
+    ~H"""
+    <div class="flex flex-wrap gap-2 text-neutral-950 dark:text-white">
+      <.chat_attachment
+        name="flavor-briefs.pdf"
+        type="application/pdf"
+        size={482_133}
+        on_remove="chat_remove"
+        ref="0"
+        class="flex items-center gap-2 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs dark:border-neutral-800"
+        meta_class="text-neutral-500"
+        remove_class="rounded px-1 text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+      >
+        <:icon>📄</:icon>
+      </.chat_attachment>
+      <.chat_attachment
+        name="supplier-quotes.xlsx"
+        size={1_240_000}
+        status="uploading"
+        progress={64}
+        class="flex items-center gap-2 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs dark:border-neutral-800"
+        meta_class="text-neutral-500"
+        progress_class="h-1 w-16 accent-neutral-900 dark:accent-white"
+      >
+        <:icon>📊</:icon>
+      </.chat_attachment>
+    </div>
+    """
+  end
+
+  # ── chat_sources ──────────────────────────────────────────────────────────
+  def example(%{section: "chat_sources-hero"} = assigns) do
+    ~H"""
+    <.chat_sources
+      class="flex w-full max-w-md flex-col gap-2 text-neutral-950 dark:text-white"
+      label_class="text-xs font-medium text-neutral-500"
+      list_class="flex flex-wrap gap-2"
+      link_class="flex items-center gap-2 rounded-full border border-neutral-200 px-2.5 py-1 text-xs hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+      index_class="flex size-4 items-center justify-center rounded-full bg-neutral-200 text-[10px] dark:bg-neutral-800"
+      domain_class="text-neutral-500"
+    >
+      <:source href="https://joycone.com/fs_products/waffle-cones/" title="Joy Cone" />
+      <:source href="https://www.webstaurantstore.com/" title="WebstaurantStore" />
+      <:source href="https://www.thekonery.com/" title="The Konery" />
+    </.chat_sources>
+    """
+  end
+
+  # ── chat_typing_indicator ─────────────────────────────────────────────────
+  def example(%{section: "chat_typing_indicator-hero"} = assigns) do
+    ~H"""
+    <.chat_typing_indicator
+      class="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-2 dark:bg-neutral-800"
+      dot_class="size-1.5 animate-bounce rounded-full bg-neutral-500 [animation-delay:calc(var(--index)*150ms)] dark:bg-neutral-300"
+    />
+    """
+  end
+
+  # ── chat_thread_list ──────────────────────────────────────────────────────
+  def example(%{section: "chat_thread_list-live"} = assigns) do
+    ~H"""
+    <.chat_thread_list
+      on_new="chat_new"
+      on_select="chat_open"
+      on_delete="chat_delete"
+      class="flex w-64 flex-col gap-2 text-sm text-neutral-950 dark:text-white"
+      new_class="rounded-lg border border-neutral-200 px-3 py-2 text-left font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+      list_class="flex flex-col"
+      item_class="group flex items-center rounded-lg data-[active]:bg-neutral-100 dark:data-[active]:bg-neutral-900"
+      link_class="flex min-w-0 flex-1 flex-col items-start px-3 py-1.5 text-left"
+      title_class="w-full truncate"
+      meta_class="text-xs text-neutral-500"
+      delete_class="invisible px-2 text-xs text-neutral-400 group-hover:visible group-focus-within:visible"
+    >
+      <:thread id="t-1" title="Summer flavor launch" meta="Today" active />
+      <:thread id="t-2" title="Waffle cone suppliers" meta="Yesterday" />
+      <:thread id="t-3" title="Freezer capacity plan" meta="Sep 12" />
+    </.chat_thread_list>
+    """
+  end
+
   def example(assigns), do: ~H""
+
+  defp chat_sample_messages,
+    do: [
+      {"m1", "user", "Which flavor should we launch this summer?"},
+      {"m2", "assistant", "Pistachio — sales are up 23% this month."},
+      {"m3", "user", "And the runner-up?"},
+      {"m4", "assistant", "Peach. Stone-fruit flavors are trending in the same range."}
+    ]
 
   def tooltip_hero_icon(%{kind: :bold} = assigns) do
     ~H"""

@@ -1,0 +1,92 @@
+defmodule DevelopmentWeb.Components.Headless.ChatBranchPicker do
+  @moduledoc """
+  Headless **chat_branch_picker** — step between alternative versions of a message.
+
+  Regenerating an answer or editing a question creates a branch; this is the `‹ 2 / 3 ›` control
+  that moves between them. It is pure server state: `index` (1-based) of `count`, and the
+  previous/next buttons send `on_previous` / `on_next` with `value` (typically the message id).
+  The buttons are disabled at either end, and the position is a polite live region so the change
+  is announced.
+
+  With a single version there is nothing to pick, so nothing renders unless `always` is set.
+
+      <.chat_branch_picker index={@branch} count={@branches} value="m-2"
+        on_previous="prev_branch" on_next="next_branch" />
+
+  Parts: `previous`, `status`, `next`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-branch-picker*`.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_branch_picker
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :index, :integer, required: true, doc: "The version shown, 1-based"
+  attr :count, :integer, required: true, doc: "How many versions exist"
+  attr :on_previous, :string, default: nil, doc: "LiveView event for the previous button"
+  attr :on_next, :string, default: nil, doc: "LiveView event for the next button"
+  attr :value, :any, default: nil, doc: "Sent with both events as phx-value-value"
+  attr :target, :any, default: nil, doc: "phx-target for both buttons"
+  attr :always, :boolean, default: false, doc: "Render even when there is only one version"
+  attr :label, :string, default: "Versions", doc: "Accessible name of the group"
+  attr :previous_label, :string, default: "Previous version", doc: "Accessible name of previous"
+  attr :next_label, :string, default: "Next version", doc: "Accessible name of next"
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :previous_class, :any, default: nil, doc: ~s|Extra classes for `data-part="previous"`|
+  attr :status_class, :any, default: nil, doc: ~s|Extra classes for `data-part="status"`|
+  attr :next_class, :any, default: nil, doc: ~s|Extra classes for `data-part="next"`|
+  attr :rest, :global
+
+  slot :previous, doc: "Content of the previous button (defaults to ‹)"
+  slot :next, doc: "Content of the next button (defaults to ›)"
+
+  def chat_branch_picker(assigns) do
+    ~H"""
+    <div
+      :if={@always || @count > 1}
+      role="group"
+      aria-label={@label}
+      data-part="root"
+      data-index={@index}
+      data-count={@count}
+      class={["chelekom-chat-branch-picker", @class]}
+      {@rest}
+    >
+      <button
+        type="button"
+        aria-label={@previous_label}
+        disabled={@index <= 1}
+        phx-click={@on_previous}
+        phx-value-value={@value}
+        phx-target={@target}
+        data-part="previous"
+        class={["chelekom-chat-branch-picker__previous", @previous_class]}
+      >
+        {if @previous != [], do: render_slot(@previous), else: "‹"}
+      </button>
+      <span
+        aria-live="polite"
+        aria-atomic="true"
+        data-part="status"
+        class={["chelekom-chat-branch-picker__status", @status_class]}
+      >
+        {@index} / {@count}
+      </span>
+      <button
+        type="button"
+        aria-label={@next_label}
+        disabled={@index >= @count}
+        phx-click={@on_next}
+        phx-value-value={@value}
+        phx-target={@target}
+        data-part="next"
+        class={["chelekom-chat-branch-picker__next", @next_class]}
+      >
+        {if @next != [], do: render_slot(@next), else: "›"}
+      </button>
+    </div>
+    """
+  end
+end

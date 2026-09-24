@@ -1,0 +1,157 @@
+defmodule <%= @module %> do
+  @moduledoc """
+  Headless **chat_attachment** — a file in a message or waiting in the composer.
+
+  Shows the file's `name`, a human `size` ("1.2 MB"), a thumbnail when `src` is given, and while
+  `status="uploading"` a `progress` bar. `data-kind` (`image`, `pdf`, `document`, `audio`,
+  `video`, `archive`, `code`, `file`) is derived from `type` (a MIME type) or the extension, so
+  a skin can pick an icon without any logic. With `on_remove` a remove button sends the event
+  with `phx-value-ref`.
+
+  It maps one-to-one onto a LiveView upload entry:
+
+      <.chat_attachment :for={entry <- @uploads.files.entries}
+        name={entry.client_name} size={entry.client_size} type={entry.client_type}
+        status={if entry.done?, do: "complete", else: "uploading"} progress={entry.progress}
+        on_remove="cancel_upload" ref={entry.ref} />
+
+  Parts: `thumbnail`, `icon`, `name`, `meta`, `progress`, `remove`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-attachment*`.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_attachment
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :name, :string, required: true, doc: "File name"
+  attr :size, :integer, default: nil, doc: "Size in bytes"
+  attr :type, :string, default: nil, doc: "MIME type (decides data-kind)"
+  attr :src, :string, default: nil, doc: "Thumbnail / preview URL (images)"
+  attr :href, :string, default: nil, doc: "Download / open URL — makes the name a link"
+
+  attr :status, :string,
+    default: "complete",
+    values: ~w(complete uploading error),
+    doc: "Upload state"
+
+  attr :progress, :integer, default: nil, doc: "Upload progress 0–100 (while uploading)"
+  attr :on_remove, :string, default: nil, doc: "LiveView event for the remove button"
+  attr :ref, :string, default: nil, doc: "Sent with on_remove as phx-value-ref"
+  attr :target, :any, default: nil, doc: "phx-target for the remove button"
+  attr :remove_label, :string, default: nil, doc: ~s|Accessible name of remove (default "Remove <name>")|
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :thumbnail_class, :any, default: nil, doc: ~s|Extra classes for `data-part="thumbnail"`|
+  attr :icon_class, :any, default: nil, doc: ~s|Extra classes for `data-part="icon"`|
+  attr :name_class, :any, default: nil, doc: ~s|Extra classes for `data-part="name"`|
+  attr :meta_class, :any, default: nil, doc: ~s|Extra classes for `data-part="meta"`|
+  attr :progress_class, :any, default: nil, doc: ~s|Extra classes for `data-part="progress"`|
+  attr :remove_class, :any, default: nil, doc: ~s|Extra classes for `data-part="remove"`|
+  attr :rest, :global
+
+  slot :icon, doc: "Shown when there is no thumbnail"
+  slot :remove, doc: "Content of the remove button (defaults to ×)"
+
+  def <%= @component_prefix %>chat_attachment(assigns) do
+    assigns =
+      assigns
+      |> assign(:kind, kind(assigns.type, assigns.name))
+      |> assign(:human_size, human_size(assigns.size))
+
+    ~H"""
+    <div
+      data-part="root"
+      data-kind={@kind}
+      data-status={@status}
+      aria-busy={to_string(@status == "uploading")}
+      class={["chelekom-chat-attachment", @class]}
+      {@rest}
+    >
+      <img
+        :if={@src}
+        src={@src}
+        alt=""
+        data-part="thumbnail"
+        class={["chelekom-chat-attachment__thumbnail", @thumbnail_class]}
+      />
+      <span
+        :if={!@src && @icon != []}
+        data-part="icon"
+        aria-hidden="true"
+        class={["chelekom-chat-attachment__icon", @icon_class]}
+      >
+        {render_slot(@icon)}
+      </span>
+
+      <a
+        :if={@href}
+        href={@href}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-part="name"
+        class={["chelekom-chat-attachment__name", @name_class]}
+      >
+        {@name}
+      </a>
+      <span :if={!@href} data-part="name" class={["chelekom-chat-attachment__name", @name_class]}>
+        {@name}
+      </span>
+
+      <span :if={@human_size} data-part="meta" class={["chelekom-chat-attachment__meta", @meta_class]}>
+        {@human_size}
+      </span>
+
+      <progress
+        :if={@status == "uploading" && @progress}
+        max="100"
+        value={@progress}
+        aria-label={"Uploading #{@name}"}
+        data-part="progress"
+        class={["chelekom-chat-attachment__progress", @progress_class]}
+      >
+        {@progress}%
+      </progress>
+
+      <button
+        :if={@on_remove}
+        type="button"
+        phx-click={@on_remove}
+        phx-value-ref={@ref}
+        phx-target={@target}
+        aria-label={@remove_label || "Remove #{@name}"}
+        data-part="remove"
+        class={["chelekom-chat-attachment__remove", @remove_class]}
+      >
+        {if @remove != [], do: render_slot(@remove), else: "×"}
+      </button>
+    </div>
+    """
+  end
+
+  @extensions %{
+    "image" => ~w(png jpg jpeg gif webp svg avif heic),
+    "pdf" => ~w(pdf),
+    "document" => ~w(doc docx odt rtf txt md pages),
+    "audio" => ~w(mp3 wav ogg m4a flac),
+    "video" => ~w(mp4 mov webm mkv avi),
+    "archive" => ~w(zip tar gz tgz rar 7z),
+    "code" => ~w(ex exs js ts json html css py rb go rs java c cpp sh sql yml yaml csv)
+  }
+
+  defp kind("image/" <> _, _), do: "image"
+  defp kind("audio/" <> _, _), do: "audio"
+  defp kind("video/" <> _, _), do: "video"
+  defp kind("application/pdf", _), do: "pdf"
+
+  defp kind(_type, name) do
+    ext = name |> Path.extname() |> String.trim_leading(".") |> String.downcase()
+    Enum.find_value(@extensions, "file", fn {kind, exts} -> ext in exts && kind end)
+  end
+
+  defp human_size(nil), do: nil
+  defp human_size(bytes) when bytes < 1024, do: "#{bytes} B"
+  defp human_size(bytes) when bytes < 1_048_576, do: "#{Float.round(bytes / 1024, 1)} KB"
+  defp human_size(bytes) when bytes < 1_073_741_824, do: "#{Float.round(bytes / 1_048_576, 1)} MB"
+  defp human_size(bytes), do: "#{Float.round(bytes / 1_073_741_824, 1)} GB"
+end

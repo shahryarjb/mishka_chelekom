@@ -113,6 +113,20 @@ defmodule DevelopmentWeb.Showcase.HeadlessDaisyUIExamples do
   import DevelopmentWeb.Components.Headless.Carousel
   import DevelopmentWeb.Components.Headless.Calendar
   import DevelopmentWeb.Components.Headless.RadioGroup
+  import DevelopmentWeb.Components.Headless.ChatActionBar
+  import DevelopmentWeb.Components.Headless.ChatApproval
+  import DevelopmentWeb.Components.Headless.ChatAttachment
+  import DevelopmentWeb.Components.Headless.ChatBranchPicker
+  import DevelopmentWeb.Components.Headless.ChatComposer
+  import DevelopmentWeb.Components.Headless.ChatMessage
+  import DevelopmentWeb.Components.Headless.ChatReasoning
+  import DevelopmentWeb.Components.Headless.ChatSources
+  import DevelopmentWeb.Components.Headless.ChatStream
+  import DevelopmentWeb.Components.Headless.ChatSuggestions
+  import DevelopmentWeb.Components.Headless.ChatThread
+  import DevelopmentWeb.Components.Headless.ChatThreadList
+  import DevelopmentWeb.Components.Headless.ChatToolCall
+  import DevelopmentWeb.Components.Headless.ChatTypingIndicator
 
   @faq [
     {"What is a skin?",
@@ -137,6 +151,67 @@ defmodule DevelopmentWeb.Showcase.HeadlessDaisyUIExamples do
   }
 
   @sections %{
+    "chat_thread" => [
+      {"chat_thread-hero", "Chat thread",
+       "A daisyUI card holding the scrolling log: `chat`/`chat-bubble` messages stay pinned to the newest one, and the composer is a `join` in the footer."}
+    ],
+    "chat_message" => [
+      {"chat_message-hero", "Chat bubbles",
+       "daisyUI's `chat` grid: `body_class=\"contents\"` flattens the body so the avatar, header, bubble and footer land in daisyUI's grid areas."},
+      {"chat_message-colors", "Bubble colors",
+       "`chat-bubble-info` / `-success` / `-warning` / `-error`."},
+      {"chat_message-streaming", "Streaming",
+       "The caret part as a `loading-dots` while text arrives."}
+    ],
+    "chat_stream" => [
+      {"chat_stream-hero", "Streamed text",
+       "Pushed deltas append inside a `chat-bubble`; newlines survive."}
+    ],
+    "chat_composer" => [
+      {"chat_composer-live", "Composer",
+       "A `textarea` with a circular send button; Enter sends, Shift+Enter adds a line."},
+      {"chat_composer-running-live", "While answering",
+       "The stop button replaces send; Escape stops too."}
+    ],
+    "chat_action_bar" => [
+      {"chat_action_bar-live", "Message actions",
+       "A `join` of small buttons: copy turns `btn-success` while `data-copied`, the thumbs are `aria-pressed` toggles."}
+    ],
+    "chat_branch_picker" => [
+      {"chat_branch_picker-live", "Versions", "A `join` stepping between regenerated answers."}
+    ],
+    "chat_reasoning" => [
+      {"chat_reasoning-hero", "Thought", "A `collapse` with the trace as vertical `steps`."},
+      {"chat_reasoning-streaming", "Thinking",
+       "Open while streaming; the sources read are links."}
+    ],
+    "chat_tool_call" => [
+      {"chat_tool_call-hero", "Tool call",
+       "A `collapse` with badges; arguments in a `mockup-code`."},
+      {"chat_tool_call-running", "Running", "A `loading-spinner` as the status."}
+    ],
+    "chat_approval" => [
+      {"chat_approval-live", "Question", "A `fieldset` of checkbox options in a card."},
+      {"chat_approval-confirm-live", "Approve or deny",
+       "An `alert-warning` for a risky tool call."}
+    ],
+    "chat_suggestions" => [
+      {"chat_suggestions-live", "Suggestions", "Outline buttons that send their prompt."}
+    ],
+    "chat_attachment" => [
+      {"chat_attachment-live", "Attachments", "Badges with a `progress` bar while uploading."}
+    ],
+    "chat_sources" => [
+      {"chat_sources-hero", "Sources", "Numbered outline badges, opening in a new tab."}
+    ],
+    "chat_typing_indicator" => [
+      {"chat_typing_indicator-hero", "Typing", "`loading-dots` inside a `chat-bubble`."},
+      {"chat_typing_indicator-label", "With a label",
+       "Three `status` dots, staggered through `--index`."}
+    ],
+    "chat_thread_list" => [
+      {"chat_thread_list-live", "Conversations", "A `menu` of threads with a new-chat button."}
+    ],
     "accordion" => [
       {"accordion-hero", "Accordion",
        "daisyUI's `collapse` with the arrow icon, joined into one bordered box. No styling classes in the markup — the skin draws the border, radii, padding and the rotating arrow."},
@@ -13877,6 +13952,445 @@ defmodule DevelopmentWeb.Showcase.HeadlessDaisyUIExamples do
     """
   end
 
+  # ── chat ──────────────────────────────────────────────────────────────────
+  def example(%{section: "chat_thread-hero"} = assigns) do
+    ~H"""
+    <.chat_thread
+      id="daisyui-chat-thread-hero"
+      class="d-card d-card-border bg-base-100 h-96 w-full max-w-lg overflow-hidden"
+      viewport_class="px-3 py-2"
+      empty_class="py-10 text-center opacity-60"
+      scroll_button_class="d-btn d-btn-xs d-btn-circle absolute bottom-20 left-1/2 -translate-x-1/2"
+      footer_class="border-base-300 border-t p-2"
+    >
+      <.chat_message
+        :for={{id, role, text} <- chat_sample_messages()}
+        id={"daisyui-chat-thread-hero-#{id}"}
+        role={role}
+        class={["d-chat", if(role == "user", do: "d-chat-end", else: "d-chat-start")]}
+        body_class="contents"
+        content_class={["d-chat-bubble", role == "user" && "d-chat-bubble-primary"]}
+      >
+        {text}
+      </.chat_message>
+      <:scroll_button>↓</:scroll_button>
+      <:empty>How can I help today?</:empty>
+      <:footer>
+        <.chat_composer
+          id="daisyui-chat-thread-hero-composer"
+          on_submit="chat_send"
+          class="d-join w-full"
+          input_class="d-textarea d-join-item min-h-0 w-full"
+          actions_class="d-join-item flex"
+          send_class="d-btn d-btn-primary d-join-item"
+        />
+      </:footer>
+    </.chat_thread>
+    """
+  end
+
+  def example(%{section: "chat_message-hero"} = assigns) do
+    ~H"""
+    <div class="w-full max-w-md">
+      <.chat_message
+        role="assistant"
+        name="Obi-Wan Kenobi"
+        timestamp="2026-09-24T12:45:00"
+        class="d-chat d-chat-start"
+        avatar_class="d-chat-image d-avatar"
+        body_class="contents"
+        header_class="d-chat-header"
+        time_class="text-xs opacity-50"
+        content_class="d-chat-bubble"
+        footer_class="d-chat-footer opacity-50"
+      >
+        <:avatar>
+          <div class="bg-neutral text-neutral-content w-10 rounded-full text-center leading-10">
+            OK
+          </div>
+        </:avatar>
+        You were the Chosen One!
+        <:actions>Delivered</:actions>
+      </.chat_message>
+      <.chat_message
+        role="user"
+        name="Anakin"
+        timestamp="2026-09-24T12:46:00"
+        last
+        class="d-chat d-chat-end"
+        avatar_class="d-chat-image d-avatar"
+        body_class="contents"
+        header_class="d-chat-header"
+        time_class="text-xs opacity-50"
+        content_class="d-chat-bubble d-chat-bubble-primary"
+        footer_class="d-chat-footer opacity-50"
+      >
+        <:avatar>
+          <div class="bg-primary text-primary-content w-10 rounded-full text-center leading-10">
+            A
+          </div>
+        </:avatar>
+        I hate you!
+        <:actions>Seen at 12:46</:actions>
+      </.chat_message>
+    </div>
+    """
+  end
+
+  def example(%{section: "chat_message-colors"} = assigns) do
+    ~H"""
+    <div class="w-full max-w-md">
+      <.chat_message
+        :for={
+          {tone, text} <- [
+            {"d-chat-bubble-info", "Calm down, Anakin."},
+            {"d-chat-bubble-success", "You have been given a great honor."},
+            {"d-chat-bubble-warning", "To be on the Council at your age."},
+            {"d-chat-bubble-error", "It's never happened before."}
+          ]
+        }
+        role="assistant"
+        class="d-chat d-chat-start"
+        body_class="contents"
+        content_class={["d-chat-bubble", tone]}
+      >
+        {text}
+      </.chat_message>
+    </div>
+    """
+  end
+
+  def example(%{section: "chat_message-streaming"} = assigns) do
+    ~H"""
+    <.chat_message
+      role="assistant"
+      status="streaming"
+      class="d-chat d-chat-start w-full max-w-md"
+      body_class="contents"
+      content_class="d-chat-bubble"
+      caret_class="d-loading d-loading-dots d-loading-xs ml-1 align-middle"
+    >
+      Stone-fruit flavors are trending in the same range
+    </.chat_message>
+    """
+  end
+
+  def example(%{section: "chat_stream-hero"} = assigns) do
+    ~H"""
+    <div class="d-chat d-chat-start w-full max-w-md">
+      <div class="d-chat-bubble">
+        <.chat_stream
+          id="daisyui-chat-stream-hero"
+          text={"Pistachio is your fastest-growing flavor." <> "\n" <> "Push it to the front of the freezer."}
+          done
+          class="block"
+        />
+      </div>
+    </div>
+    """
+  end
+
+  def example(%{section: "chat_composer-live"} = assigns) do
+    ~H"""
+    <.chat_composer
+      id="daisyui-chat-composer-live"
+      on_submit="chat_send"
+      class="flex w-full max-w-md items-end gap-2"
+      input_class="d-textarea w-full"
+      actions_class="flex"
+      send_class="d-btn d-btn-primary d-btn-circle"
+    >
+      <:send>↑</:send>
+    </.chat_composer>
+    """
+  end
+
+  def example(%{section: "chat_composer-running-live"} = assigns) do
+    ~H"""
+    <.chat_composer
+      id="daisyui-chat-composer-running"
+      on_submit="chat_send"
+      on_cancel="chat_stop"
+      running
+      class="flex w-full max-w-md items-end gap-2"
+      input_class="d-textarea w-full"
+      actions_class="flex"
+      cancel_class="d-btn d-btn-neutral d-btn-circle"
+    >
+      <:cancel>■</:cancel>
+    </.chat_composer>
+    """
+  end
+
+  def example(%{section: "chat_action_bar-live"} = assigns) do
+    ~H"""
+    <.chat_action_bar
+      id="daisyui-chat-action-bar-live"
+      copy="Pistachio is your fastest-growing flavor."
+      class="d-join"
+      copy_class="d-btn d-btn-sm d-join-item data-[copied]:d-btn-success"
+      action_class="d-btn d-btn-sm d-join-item aria-pressed:d-btn-active"
+    >
+      <:action label="Regenerate" on_click="chat_regenerate" value="m-2">↻</:action>
+      <:action label="Good answer" on_click="chat_rate" value="up" pressed>👍</:action>
+      <:action label="Bad answer" on_click="chat_rate" value="down" pressed={false}>👎</:action>
+    </.chat_action_bar>
+    """
+  end
+
+  def example(%{section: "chat_branch_picker-live"} = assigns) do
+    ~H"""
+    <.chat_branch_picker
+      index={2}
+      count={3}
+      value="m-2"
+      on_previous="chat_branch_previous"
+      on_next="chat_branch_next"
+      class="d-join"
+      previous_class="d-btn d-btn-xs d-join-item"
+      status_class="d-btn d-btn-xs d-join-item d-btn-disabled tabular-nums"
+      next_class="d-btn d-btn-xs d-join-item"
+    />
+    """
+  end
+
+  def example(%{section: "chat_reasoning-hero"} = assigns) do
+    ~H"""
+    <.chat_reasoning
+      id="daisyui-chat-reasoning-hero"
+      duration={4}
+      class="d-collapse d-collapse-arrow bg-base-100 border-base-300 w-full max-w-md border"
+      trigger_class="d-collapse-title text-sm font-semibold"
+      content_class="d-collapse-content text-sm"
+      steps_class="d-steps d-steps-vertical"
+      step_class="d-step d-step-primary"
+    >
+      <:step label="Reading flavor briefs" />
+      <:step label="Comparing tasting notes" detail="6 flavors" />
+      <:step label="Writing the scoop report" />
+    </.chat_reasoning>
+    """
+  end
+
+  def example(%{section: "chat_reasoning-streaming"} = assigns) do
+    ~H"""
+    <.chat_reasoning
+      id="daisyui-chat-reasoning-streaming"
+      status="streaming"
+      label="Searching the web"
+      class="d-collapse d-collapse-arrow bg-base-100 border-base-300 w-full max-w-md border"
+      trigger_class="d-collapse-title text-sm font-semibold"
+      label_class="animate-pulse"
+      content_class="d-collapse-content text-sm"
+      steps_class="flex flex-col gap-1"
+      step_label_class="d-link d-link-hover"
+      step_detail_class="d-badge d-badge-ghost d-badge-sm ml-2"
+    >
+      <:step label="Joy Cone" detail="joycone.com" href="https://joycone.com/" />
+      <:step
+        label="The Konery"
+        detail="thekonery.com"
+        href="https://www.thekonery.com/"
+        status="active"
+      />
+    </.chat_reasoning>
+    """
+  end
+
+  def example(%{section: "chat_tool_call-hero"} = assigns) do
+    ~H"""
+    <.chat_tool_call
+      name="read_file"
+      label="Read ChurnSchedule.tsx"
+      status="success"
+      duration={320}
+      args={%{"path" => "src/ChurnSchedule.tsx"}}
+      output="204 lines"
+      class="d-collapse d-collapse-arrow bg-base-100 border-base-300 w-full max-w-md border"
+      trigger_class="d-collapse-title flex items-center gap-2 text-sm"
+      name_class="d-badge d-badge-neutral d-badge-sm font-mono"
+      label_class="flex-1 truncate"
+      status_class="d-badge d-badge-success d-badge-sm"
+      duration_class="text-xs opacity-60"
+      content_class="d-collapse-content flex flex-col gap-2"
+      heading_class="text-xs font-semibold opacity-60"
+      args_class="d-mockup-code text-xs"
+      result_class="flex flex-col gap-1 text-xs"
+    />
+    """
+  end
+
+  def example(%{section: "chat_tool_call-running"} = assigns) do
+    ~H"""
+    <.chat_tool_call
+      name="web_search"
+      label="Searching the web"
+      status="running"
+      class="d-collapse bg-base-100 border-base-300 w-full max-w-md border"
+      trigger_class="d-collapse-title flex items-center gap-2 text-sm"
+      name_class="d-badge d-badge-neutral d-badge-sm font-mono"
+      label_class="flex-1 truncate"
+      status_class="d-loading d-loading-spinner d-loading-xs"
+    />
+    """
+  end
+
+  def example(%{section: "chat_approval-live"} = assigns) do
+    ~H"""
+    <.chat_approval
+      id="daisyui-chat-approval-live"
+      title="Which mix-ins should we stock?"
+      multiple
+      on_submit="chat_answer"
+      on_deny="chat_skip"
+      class="d-card d-card-border bg-base-100 w-full max-w-md p-4"
+      fieldset_class="d-fieldset"
+      title_class="d-fieldset-legend"
+      options_class="flex flex-col gap-2"
+      option_class="d-label cursor-pointer gap-3"
+      option_input_class="d-checkbox d-checkbox-primary"
+      actions_class="d-card-actions mt-2 justify-end"
+      deny_class="d-btn d-btn-ghost d-btn-sm"
+      approve_class="d-btn d-btn-primary d-btn-sm"
+    >
+      <:option value="chips" label="Chocolate chips" checked />
+      <:option value="waffle" label="Waffle bits" />
+      <:option value="sprinkles" label="Sprinkles" />
+    </.chat_approval>
+    """
+  end
+
+  def example(%{section: "chat_approval-confirm-live"} = assigns) do
+    ~H"""
+    <.chat_approval
+      id="daisyui-chat-approval-confirm"
+      title="Run `rm -rf build/`?"
+      description="The agent wants to delete the build directory before rebuilding."
+      on_submit="chat_approve"
+      on_deny="chat_deny"
+      class="d-alert d-alert-warning w-full max-w-md"
+      fieldset_class="flex w-full flex-col gap-1"
+      title_class="font-semibold"
+      description_class="text-sm"
+      actions_class="mt-2 flex justify-end gap-2"
+      deny_class="d-btn d-btn-sm"
+      approve_class="d-btn d-btn-sm d-btn-neutral"
+    />
+    """
+  end
+
+  def example(%{section: "chat_suggestions-live"} = assigns) do
+    ~H"""
+    <.chat_suggestions
+      on_select="chat_suggestion"
+      class="flex w-full max-w-md flex-wrap gap-2"
+      suggestion_class="d-btn d-btn-outline d-btn-sm h-auto flex-col items-start py-2"
+      description_class="text-xs font-normal opacity-60"
+    >
+      <:suggestion
+        prompt="Which flavors sell best in winter?"
+        title="Winter bestsellers"
+        description="by region"
+      />
+      <:suggestion
+        prompt="Compare gelato and soft serve margins"
+        title="Gelato vs soft serve"
+        description="margins"
+      />
+    </.chat_suggestions>
+    """
+  end
+
+  def example(%{section: "chat_attachment-live"} = assigns) do
+    ~H"""
+    <div class="flex flex-wrap gap-2">
+      <.chat_attachment
+        name="flavor-briefs.pdf"
+        type="application/pdf"
+        size={482_133}
+        on_remove="chat_remove"
+        ref="0"
+        class="d-badge d-badge-lg d-badge-outline gap-2"
+        meta_class="opacity-60"
+        remove_class="d-btn d-btn-ghost d-btn-xs d-btn-circle"
+      >
+        <:icon>📄</:icon>
+      </.chat_attachment>
+      <.chat_attachment
+        name="supplier-quotes.xlsx"
+        size={1_240_000}
+        status="uploading"
+        progress={64}
+        class="d-badge d-badge-lg d-badge-outline gap-2"
+        progress_class="d-progress d-progress-primary w-16"
+      >
+        <:icon>📊</:icon>
+      </.chat_attachment>
+    </div>
+    """
+  end
+
+  def example(%{section: "chat_sources-hero"} = assigns) do
+    ~H"""
+    <.chat_sources
+      class="flex w-full max-w-md flex-col gap-2"
+      label_class="text-xs font-semibold opacity-60"
+      list_class="flex flex-wrap gap-2"
+      link_class="d-badge d-badge-outline gap-2 hover:d-badge-primary"
+      index_class="d-badge d-badge-neutral d-badge-xs"
+      domain_class="opacity-60"
+    >
+      <:source href="https://joycone.com/fs_products/waffle-cones/" title="Joy Cone" />
+      <:source href="https://www.webstaurantstore.com/" title="WebstaurantStore" />
+      <:source href="https://www.thekonery.com/" title="The Konery" />
+    </.chat_sources>
+    """
+  end
+
+  def example(%{section: "chat_typing_indicator-hero"} = assigns) do
+    ~H"""
+    <div class="d-chat d-chat-start">
+      <div class="d-chat-bubble">
+        <.chat_typing_indicator dots={0} class="d-loading d-loading-dots d-loading-sm" />
+      </div>
+    </div>
+    """
+  end
+
+  def example(%{section: "chat_typing_indicator-label"} = assigns) do
+    ~H"""
+    <.chat_typing_indicator
+      show_label
+      label="Assistant is thinking…"
+      class="flex items-center gap-1.5 text-sm"
+      dot_class="d-status d-status-primary animate-bounce [animation-delay:calc(var(--index)*150ms)]"
+      label_class="ml-1 opacity-70"
+    />
+    """
+  end
+
+  def example(%{section: "chat_thread_list-live"} = assigns) do
+    ~H"""
+    <.chat_thread_list
+      on_new="chat_new"
+      on_select="chat_open"
+      on_delete="chat_delete"
+      class="bg-base-200 rounded-box w-64 p-2"
+      new_class="d-btn d-btn-primary d-btn-sm mb-2 w-full"
+      list_class="d-menu w-full p-0"
+      item_class="flex-row items-center"
+      link_class="flex-1 flex-col items-start data-[active]:d-menu-active [[data-active]_&]:d-menu-active"
+      title_class="truncate"
+      meta_class="text-xs opacity-60"
+      delete_class="d-btn d-btn-ghost d-btn-xs"
+    >
+      <:thread id="t-1" title="Summer flavor launch" meta="Today" active />
+      <:thread id="t-2" title="Waffle cone suppliers" meta="Yesterday" />
+      <:thread id="t-3" title="Freezer capacity plan" meta="Sep 12" />
+    </.chat_thread_list>
+    """
+  end
+
   attr :paint, :string, default: "tailwind", values: ~w(tailwind css theme)
   attr :size, :string, default: "h-56 w-72"
   slot :inner_block, required: true
@@ -14186,4 +14700,12 @@ defmodule DevelopmentWeb.Showcase.HeadlessDaisyUIExamples do
     </svg>
     """
   end
+
+  defp chat_sample_messages,
+    do: [
+      {"m1", "user", "Which flavor should we launch this summer?"},
+      {"m2", "assistant", "Pistachio — sales are up 23% this month."},
+      {"m3", "user", "And the runner-up?"},
+      {"m4", "assistant", "Peach. Stone-fruit flavors are trending in the same range."}
+    ]
 end

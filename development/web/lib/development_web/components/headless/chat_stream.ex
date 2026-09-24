@@ -1,0 +1,79 @@
+defmodule DevelopmentWeb.Components.Headless.ChatStream do
+  @moduledoc """
+  Headless **chat_stream** — model output that streams in token by token, without re-rendering
+  the whole answer for every token.
+
+  Re-assigning a growing string sends the entire text over the socket on each chunk. Here the
+  server pushes only the new piece, and the `ChatStream` hook appends it:
+
+      push_event(socket, "chelekom:chat-stream", %{id: "answer", delta: chunk})
+      push_event(socket, "chelekom:chat-stream", %{id: "answer", done: true})
+
+  `%{id: "answer", text: full}` replaces the text (a regenerate, or swapping in the final text).
+  Re-rendering with a new `text` works too — it arrives as `data-text`, which is also what a
+  reconnect re-renders, so assign the accumulated text once the stream finishes.
+
+  `smooth` reveals buffered text a few characters per frame (faster when more is waiting), so a
+  model that emits whole sentences at once still reads as an even stream.
+
+  Text is written with `textContent`: model output can never inject markup. When the answer is
+  complete, render it as markdown on the server if you want formatting.
+
+  `done` (or a `done: true` push) sets `data-done` on the root; the `caret` part renders until
+  then.
+
+  Parts: `text`, `caret`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-stream*`. The headless
+  stylesheet sets `white-space: pre-wrap` on `text` so newlines survive.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_stream
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :id, :string, required: true, doc: "Unique id; also the id pushes target"
+  attr :text, :string, default: "", doc: "The text so far (or the final text)"
+  attr :done, :boolean, default: false, doc: "The stream has finished (data-done, no caret)"
+
+  attr :smooth, :boolean,
+    default: false,
+    doc: "Reveal pushed text gradually, a few characters a frame"
+
+  attr :show_caret, :boolean, default: true, doc: "Render the caret until done"
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+
+  attr :text_class, :any,
+    default: nil,
+    doc: ~s|Extra classes for `data-part="text"`. Frozen after first render (it is ignored)|
+
+  attr :caret_class, :any, default: nil, doc: ~s|Extra classes for `data-part="caret"`|
+  attr :rest, :global
+
+  def chat_stream(assigns) do
+    ~H"""
+    <span
+      id={@id}
+      data-part="root"
+      data-done={@done}
+      class={["chelekom-chat-stream", @class]}
+      {@rest}
+    ><span
+      id={"#{@id}-text"}
+      phx-hook="ChatStream"
+      phx-update="ignore"
+      data-part="text"
+      data-root-id={@id}
+      data-text={@text}
+      data-smooth={@smooth}
+      class={["chelekom-chat-stream__text", @text_class]}
+    >{@text}</span><span
+      :if={!@done && @show_caret}
+      data-part="caret"
+      aria-hidden="true"
+      class={["chelekom-chat-stream__caret", @caret_class]}
+    ></span></span>
+    """
+  end
+end

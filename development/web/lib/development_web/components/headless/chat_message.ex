@@ -1,0 +1,190 @@
+defmodule DevelopmentWeb.Components.Headless.ChatMessage do
+  @moduledoc """
+  Headless **chat_message** — one turn of a conversation: who said it, what they said, and what
+  can be done with it.
+
+  `role` (`user`, `assistant`, `system`, `tool`) and `status` (`complete`, `streaming`, `pending`,
+  `error`) are exposed as `data-role` / `data-status`, so a skin aligns user bubbles right and
+  pulses a streaming answer without any extra assigns. A streaming or pending message is
+  `aria-busy`, and the `caret` part (hidden from assistive tech) marks where text is arriving.
+
+  `last` marks the newest message: `chat_action_bar`'s `autohide="not_last"` keeps the actions of
+  the latest answer visible and reveals older ones on hover or focus.
+
+  Content is yours to render — plain text, server-rendered markdown, or a `chat_stream` for token
+  streaming. Never pass model output through `raw/1` unsanitised.
+
+      <.chat_message id="m-2" role="assistant" name="Assistant" status={@status} last>
+        <:avatar><img src={~p"/images/bot.svg"} alt="" /></:avatar>
+        {@answer}
+        <:actions><.chat_action_bar id="m-2-actions" copy={@answer} /></:actions>
+      </.chat_message>
+
+  Parts: `avatar`, `body`, `header`, `name`, `time`, `content`, `caret`, `attachments`, `error`,
+  `footer`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-message*`.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_message
+  """
+  use Phoenix.Component
+
+  @roles ~w(user assistant system tool)
+  @statuses ~w(complete streaming pending error)
+
+  @doc type: :component
+  attr :id, :string, default: nil, doc: "DOM id — required when the message is a stream item"
+
+  attr :role, :string,
+    default: "assistant",
+    values: @roles,
+    doc: "Who sent it; exposed as data-role"
+
+  attr :status, :string,
+    default: "complete",
+    values: @statuses,
+    doc: "Lifecycle; streaming and pending set aria-busy and show the caret"
+
+  attr :name, :string,
+    default: nil,
+    doc: "Author shown in the header (and in the accessible name)"
+
+  attr :timestamp, :any, default: nil, doc: "A DateTime, NaiveDateTime or ISO8601 string"
+  attr :time_label, :string, default: nil, doc: "How to display the time (defaults to HH:MM)"
+  attr :last, :boolean, default: false, doc: "This is the newest message (data-last)"
+  attr :show_caret, :boolean, default: true, doc: "Render the caret while streaming"
+
+  attr :label, :string,
+    default: nil,
+    doc: ~s|Accessible name of the message (default "<name or role> message")|
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :avatar_class, :any, default: nil, doc: ~s|Extra classes for `data-part="avatar"`|
+  attr :body_class, :any, default: nil, doc: ~s|Extra classes for `data-part="body"`|
+  attr :header_class, :any, default: nil, doc: ~s|Extra classes for `data-part="header"`|
+  attr :name_class, :any, default: nil, doc: ~s|Extra classes for `data-part="name"`|
+  attr :time_class, :any, default: nil, doc: ~s|Extra classes for `data-part="time"`|
+  attr :content_class, :any, default: nil, doc: ~s|Extra classes for `data-part="content"`|
+  attr :caret_class, :any, default: nil, doc: ~s|Extra classes for `data-part="caret"`|
+
+  attr :attachments_class, :any,
+    default: nil,
+    doc: ~s|Extra classes for `data-part="attachments"`|
+
+  attr :error_class, :any, default: nil, doc: ~s|Extra classes for `data-part="error"`|
+  attr :footer_class, :any, default: nil, doc: ~s|Extra classes for `data-part="footer"`|
+  attr :rest, :global
+
+  slot :inner_block, doc: "The message content"
+  slot :avatar, doc: "Avatar or role icon"
+  slot :attachments, doc: "Files attached to the message (e.g. `chat_attachment`)"
+  slot :error, doc: "Shown as an alert when the message failed"
+  slot :actions, doc: "Rendered in the footer — usually a `chat_action_bar`"
+
+  def chat_message(assigns) do
+    assigns =
+      assigns
+      |> assign(:busy, assigns.status in ~w(streaming pending))
+      |> assign(:datetime, datetime(assigns.timestamp))
+      |> assign(
+        :accessible,
+        assigns.label || "#{assigns.name || String.capitalize(assigns.role)} message"
+      )
+
+    ~H"""
+    <div
+      id={@id}
+      role="article"
+      aria-label={@accessible}
+      aria-busy={to_string(@busy)}
+      data-part="root"
+      data-role={@role}
+      data-status={@status}
+      data-last={@last}
+      class={["chelekom-chat-message", @class]}
+      {@rest}
+    >
+      <div
+        :if={@avatar != []}
+        data-part="avatar"
+        class={["chelekom-chat-message__avatar", @avatar_class]}
+      >
+        {render_slot(@avatar)}
+      </div>
+
+      <div data-part="body" class={["chelekom-chat-message__body", @body_class]}>
+        <div
+          :if={@name || @datetime}
+          data-part="header"
+          class={["chelekom-chat-message__header", @header_class]}
+        >
+          <span :if={@name} data-part="name" class={["chelekom-chat-message__name", @name_class]}>
+            {@name}
+          </span>
+          <time
+            :if={@datetime}
+            datetime={@datetime}
+            data-part="time"
+            class={["chelekom-chat-message__time", @time_class]}
+          >
+            {@time_label || short_time(@timestamp)}
+          </time>
+        </div>
+
+        <div
+          :if={@attachments != []}
+          data-part="attachments"
+          class={["chelekom-chat-message__attachments", @attachments_class]}
+        >
+          {render_slot(@attachments)}
+        </div>
+
+        <div data-part="content" class={["chelekom-chat-message__content", @content_class]}>
+          {render_slot(@inner_block)}<span
+            :if={@busy && @show_caret}
+            data-part="caret"
+            aria-hidden="true"
+            class={["chelekom-chat-message__caret", @caret_class]}
+          ></span>
+        </div>
+
+        <div
+          :if={@error != [] && @status == "error"}
+          data-part="error"
+          role="alert"
+          class={["chelekom-chat-message__error", @error_class]}
+        >
+          {render_slot(@error)}
+        </div>
+
+        <div
+          :if={@actions != []}
+          data-part="footer"
+          class={["chelekom-chat-message__footer", @footer_class]}
+        >
+          {render_slot(@actions)}
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp datetime(nil), do: nil
+  defp datetime(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
+  defp datetime(%NaiveDateTime{} = dt), do: NaiveDateTime.to_iso8601(dt)
+  defp datetime(value) when is_binary(value), do: value
+  defp datetime(_), do: nil
+
+  defp short_time(%{hour: h, minute: m}), do: pad(h) <> ":" <> pad(m)
+
+  defp short_time(value) when is_binary(value) do
+    case NaiveDateTime.from_iso8601(value) do
+      {:ok, dt} -> short_time(dt)
+      _ -> value
+    end
+  end
+
+  defp short_time(_), do: nil
+
+  defp pad(n), do: n |> Integer.to_string() |> String.pad_leading(2, "0")
+end

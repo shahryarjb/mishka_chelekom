@@ -1,0 +1,104 @@
+defmodule <%= @module %> do
+  @moduledoc """
+  Headless **chat_sources** — where an answer came from.
+
+  A numbered list of the pages a model cited, each a link that opens in a new tab. The number
+  matches the `[1]` markers an answer uses, and `domain` is derived from `href` when not given.
+  `favicon` shows a site icon (decorative).
+
+      <.chat_sources>
+        <:source href="https://joycone.com/fs_products/waffle-cones/" title="Waffle cones" />
+        <:source href="https://www.thekonery.com/" title="The Konery" favicon="/icons/konery.png" />
+      </.chat_sources>
+
+  Parts: `label`, `list`, `source`, `link`, `index`, `favicon`, `title`, `domain`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-sources*`.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_sources
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :id, :string, default: nil, doc: "DOM id"
+  attr :label, :string, default: "Sources", doc: "Heading (and accessible name) of the list"
+  attr :show_label, :boolean, default: true, doc: "Render the heading visibly"
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :label_class, :any, default: nil, doc: ~s|Extra classes for `data-part="label"`|
+  attr :list_class, :any, default: nil, doc: ~s|Extra classes for `data-part="list"`|
+  attr :source_class, :any, default: nil, doc: ~s|Extra classes for every `data-part="source"`|
+  attr :link_class, :any, default: nil, doc: ~s|Extra classes for `data-part="link"`|
+  attr :index_class, :any, default: nil, doc: ~s|Extra classes for `data-part="index"`|
+  attr :favicon_class, :any, default: nil, doc: ~s|Extra classes for `data-part="favicon"`|
+  attr :title_class, :any, default: nil, doc: ~s|Extra classes for `data-part="title"`|
+  attr :domain_class, :any, default: nil, doc: ~s|Extra classes for `data-part="domain"`|
+  attr :rest, :global
+
+  slot :source, required: true, doc: "One cited page" do
+    attr :href, :string, required: true
+    attr :title, :string, doc: "Page title (defaults to the domain)"
+    attr :domain, :string, doc: "Shown under the title (defaults to the href's host)"
+    attr :favicon, :string, doc: "Site icon URL"
+  end
+
+  def <%= @component_prefix %>chat_sources(assigns) do
+    ~H"""
+    <section
+      id={@id}
+      aria-label={@label}
+      data-part="root"
+      class={["chelekom-chat-sources", @class]}
+      {@rest}
+    >
+      <span
+        aria-hidden="true"
+        data-part="label"
+        class={[!@show_label && "chelekom-sr-only", "chelekom-chat-sources__label", @label_class]}
+      >
+        {@label}
+      </span>
+      <ol data-part="list" class={["chelekom-chat-sources__list", @list_class]}>
+        <li
+          :for={{source, index} <- Enum.with_index(@source, 1)}
+          data-part="source"
+          data-index={index}
+          class={["chelekom-chat-sources__source", @source_class]}
+        >
+          <a
+            href={source.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-part="link"
+            class={["chelekom-chat-sources__link", @link_class]}
+          >
+            <span data-part="index" class={["chelekom-chat-sources__index", @index_class]}>{index}</span>
+            <img
+              :if={source[:favicon]}
+              src={source.favicon}
+              alt=""
+              data-part="favicon"
+              class={["chelekom-chat-sources__favicon", @favicon_class]}
+            />
+            <span data-part="title" class={["chelekom-chat-sources__title", @title_class]}>
+              {source[:title] || domain(source)}
+            </span>
+            <span data-part="domain" class={["chelekom-chat-sources__domain", @domain_class]}>
+              {domain(source)}
+            </span>
+          </a>
+        </li>
+      </ol>
+    </section>
+    """
+  end
+
+  defp domain(%{domain: domain}) when is_binary(domain), do: domain
+
+  defp domain(%{href: href}) do
+    case URI.parse(href) do
+      %URI{host: host} when is_binary(host) -> String.replace_prefix(host, "www.", "")
+      _ -> href
+    end
+  end
+end

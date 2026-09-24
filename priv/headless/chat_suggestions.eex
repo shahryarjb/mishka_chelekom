@@ -1,0 +1,77 @@
+defmodule <%= @module %> do
+  @moduledoc """
+  Headless **chat_suggestions** — prompts the user can send with one click.
+
+  The welcome-screen starters ("Explain quantum computing") and the follow-ups under an answer.
+  Each `:suggestion` is a button that sends `on_select` with `phx-value-prompt` (and
+  `phx-value-id` when given), so the server treats it exactly like a typed message. Every button
+  also carries `data-prompt` for client-side use.
+
+      <.chat_suggestions on_select="send_suggestion">
+        <:suggestion prompt="Which flavors sell best in winter?" title="Winter bestsellers" />
+        <:suggestion prompt="Compare gelato and soft serve margins" />
+      </.chat_suggestions>
+
+  Parts: `suggestion`, `title`, `description`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-suggestions*`.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_suggestions
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :on_select, :string, default: nil, doc: "LiveView event sent with phx-value-prompt"
+  attr :target, :any, default: nil, doc: "phx-target for every suggestion"
+  attr :label, :string, default: "Suggestions", doc: "Accessible name of the group"
+  attr :disabled, :boolean, default: false, doc: "Disable every suggestion (e.g. while running)"
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :suggestion_class, :any, default: nil, doc: ~s|Extra classes for every `data-part="suggestion"`|
+  attr :title_class, :any, default: nil, doc: ~s|Extra classes for `data-part="title"`|
+  attr :description_class, :any, default: nil, doc: ~s|Extra classes for `data-part="description"`|
+  attr :rest, :global
+
+  slot :suggestion, required: true, doc: "One prompt" do
+    attr :prompt, :string, required: true, doc: "The message sent when chosen"
+    attr :title, :string, doc: "Short text shown instead of the prompt"
+    attr :description, :string, doc: "A second line under the title"
+    attr :id, :string, doc: "Sent as phx-value-id"
+  end
+
+  def <%= @component_prefix %>chat_suggestions(assigns) do
+    ~H"""
+    <div
+      role="group"
+      aria-label={@label}
+      data-part="root"
+      class={["chelekom-chat-suggestions", @class]}
+      {@rest}
+    >
+      <button
+        :for={suggestion <- @suggestion}
+        type="button"
+        disabled={@disabled}
+        phx-click={@on_select}
+        phx-value-prompt={suggestion.prompt}
+        phx-value-id={suggestion[:id]}
+        phx-target={@target}
+        data-part="suggestion"
+        data-prompt={suggestion.prompt}
+        class={["chelekom-chat-suggestions__suggestion", @suggestion_class]}
+      >
+        <span data-part="title" class={["chelekom-chat-suggestions__title", @title_class]}>
+          {suggestion[:title] || suggestion.prompt}
+        </span>
+        <span
+          :if={suggestion[:description]}
+          data-part="description"
+          class={["chelekom-chat-suggestions__description", @description_class]}
+        >
+          {suggestion.description}
+        </span>
+      </button>
+    </div>
+    """
+  end
+end

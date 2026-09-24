@@ -1,0 +1,171 @@
+defmodule DevelopmentWeb.Components.Headless.ChatThreadList do
+  @moduledoc """
+  Headless **chat_thread_list** — the conversation history in a chat's sidebar.
+
+  A labelled `<nav>` with a "new chat" control and one entry per `:thread`. Each entry is a link
+  when it has `navigate` / `patch` / `href` (the usual case — one URL per conversation), or a
+  button sending `on_select` with `phx-value-id`. The current conversation is `active`
+  (`aria-current="page"`, `data-active`). `on_archive` / `on_delete` add per-thread buttons that
+  send `phx-value-id`.
+
+      <.chat_thread_list new_patch={~p"/chat"} on_delete="delete_thread">
+        <:thread :for={t <- @threads} id={t.id} title={t.title} patch={~p"/chat/\#{t.id}"}
+          active={t.id == @thread_id} meta={t.updated_label} />
+        <:empty>No conversations yet.</:empty>
+      </.chat_thread_list>
+
+  Parts: `new`, `list`, `item`, `link`, `title`, `meta`, `archive`, `delete`, `empty`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-thread-list*`.
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_thread_list
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :label, :string, default: "Conversations", doc: "Accessible name of the nav"
+  attr :new_label, :string, default: "New chat", doc: "Text of the new-chat control"
+  attr :new_navigate, :string, default: nil, doc: "New chat as a live navigation"
+  attr :new_patch, :string, default: nil, doc: "New chat as a live patch"
+  attr :on_new, :string, default: nil, doc: "New chat as a LiveView event"
+  attr :on_select, :string, default: nil, doc: "Event for threads that have no link"
+  attr :on_archive, :string, default: nil, doc: "Adds an archive button per thread"
+  attr :on_delete, :string, default: nil, doc: "Adds a delete button per thread"
+  attr :target, :any, default: nil, doc: "phx-target for every event"
+  attr :archive_label, :string, default: "Archive", doc: "Accessible name prefix of archive"
+  attr :delete_label, :string, default: "Delete", doc: "Accessible name prefix of delete"
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :new_class, :any, default: nil, doc: ~s|Extra classes for `data-part="new"`|
+  attr :list_class, :any, default: nil, doc: ~s|Extra classes for `data-part="list"`|
+  attr :item_class, :any, default: nil, doc: ~s|Extra classes for every `data-part="item"`|
+  attr :link_class, :any, default: nil, doc: ~s|Extra classes for `data-part="link"`|
+  attr :title_class, :any, default: nil, doc: ~s|Extra classes for `data-part="title"`|
+  attr :meta_class, :any, default: nil, doc: ~s|Extra classes for `data-part="meta"`|
+  attr :archive_class, :any, default: nil, doc: ~s|Extra classes for `data-part="archive"`|
+  attr :delete_class, :any, default: nil, doc: ~s|Extra classes for `data-part="delete"`|
+  attr :empty_class, :any, default: nil, doc: ~s|Extra classes for `data-part="empty"`|
+  attr :rest, :global
+
+  slot :new, doc: "Content of the new-chat control (defaults to `new_label`)"
+  slot :empty, doc: "Shown when there are no threads"
+
+  slot :thread, doc: "One conversation" do
+    attr :id, :string, required: true, doc: "Sent as phx-value-id"
+    attr :title, :string, required: true
+    attr :meta, :string, doc: "A second line: a date, a preview"
+    attr :active, :boolean, doc: "The conversation on screen"
+    attr :navigate, :string
+    attr :patch, :string
+    attr :href, :string
+  end
+
+  def chat_thread_list(assigns) do
+    ~H"""
+    <nav aria-label={@label} data-part="root" class={["chelekom-chat-thread-list", @class]} {@rest}>
+      <.link
+        :if={@new_navigate || @new_patch}
+        navigate={@new_navigate}
+        patch={@new_patch}
+        data-part="new"
+        class={["chelekom-chat-thread-list__new", @new_class]}
+      >
+        {if @new != [], do: render_slot(@new), else: @new_label}
+      </.link>
+      <button
+        :if={!@new_navigate && !@new_patch && @on_new}
+        type="button"
+        phx-click={@on_new}
+        phx-target={@target}
+        data-part="new"
+        class={["chelekom-chat-thread-list__new", @new_class]}
+      >
+        {if @new != [], do: render_slot(@new), else: @new_label}
+      </button>
+
+      <ul
+        :if={@thread != []}
+        data-part="list"
+        class={["chelekom-chat-thread-list__list", @list_class]}
+      >
+        <li
+          :for={thread <- @thread}
+          data-part="item"
+          data-active={thread[:active] == true}
+          class={["chelekom-chat-thread-list__item", @item_class]}
+        >
+          <.link
+            :if={thread[:navigate] || thread[:patch] || thread[:href]}
+            navigate={thread[:navigate]}
+            patch={thread[:patch]}
+            href={thread[:href]}
+            aria-current={thread[:active] == true && "page"}
+            data-part="link"
+            class={["chelekom-chat-thread-list__link", @link_class]}
+          >
+            <span data-part="title" class={["chelekom-chat-thread-list__title", @title_class]}>{thread.title}</span>
+            <span
+              :if={thread[:meta]}
+              data-part="meta"
+              class={["chelekom-chat-thread-list__meta", @meta_class]}
+            >
+              {thread.meta}
+            </span>
+          </.link>
+          <button
+            :if={!(thread[:navigate] || thread[:patch] || thread[:href])}
+            type="button"
+            phx-click={@on_select}
+            phx-value-id={thread.id}
+            phx-target={@target}
+            aria-current={thread[:active] == true && "true"}
+            data-part="link"
+            class={["chelekom-chat-thread-list__link", @link_class]}
+          >
+            <span data-part="title" class={["chelekom-chat-thread-list__title", @title_class]}>{thread.title}</span>
+            <span
+              :if={thread[:meta]}
+              data-part="meta"
+              class={["chelekom-chat-thread-list__meta", @meta_class]}
+            >
+              {thread.meta}
+            </span>
+          </button>
+          <button
+            :if={@on_archive}
+            type="button"
+            phx-click={@on_archive}
+            phx-value-id={thread.id}
+            phx-target={@target}
+            aria-label={"#{@archive_label} #{thread.title}"}
+            data-part="archive"
+            class={["chelekom-chat-thread-list__archive", @archive_class]}
+          >
+            {@archive_label}
+          </button>
+          <button
+            :if={@on_delete}
+            type="button"
+            phx-click={@on_delete}
+            phx-value-id={thread.id}
+            phx-target={@target}
+            aria-label={"#{@delete_label} #{thread.title}"}
+            data-part="delete"
+            class={["chelekom-chat-thread-list__delete", @delete_class]}
+          >
+            {@delete_label}
+          </button>
+        </li>
+      </ul>
+
+      <div
+        :if={@thread == [] && @empty != []}
+        data-part="empty"
+        class={["chelekom-chat-thread-list__empty", @empty_class]}
+      >
+        {render_slot(@empty)}
+      </div>
+    </nav>
+    """
+  end
+end

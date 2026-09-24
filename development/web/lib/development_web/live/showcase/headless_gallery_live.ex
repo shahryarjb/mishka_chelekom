@@ -147,6 +147,12 @@ defmodule DevelopmentWeb.Showcase.HeadlessGalleryLive do
     {:noreply, assign(socket, submitted: inspect(Map.drop(params, ["_target", "_csrf_token"])))}
   end
 
+  # The chat examples (send, stop, regenerate, rate, answer, …) all echo what they sent, so a
+  # button that looks inert in a static gallery still proves its event and params arrive.
+  def handle_event("chat_" <> _ = event, params, socket) do
+    {:noreply, assign(socket, submitted: "#{event} #{inspect(Map.drop(params, ["_target"]))}")}
+  end
+
   # Which examples show what the server received back. Every `*-form` section submits, and the
   # breadcrumb's expandable trail pushes from its ellipsis — without this it would look inert.
   defp echoes_events?(id),

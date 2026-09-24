@@ -1,0 +1,137 @@
+defmodule <%= @module %> do
+  @moduledoc """
+  Headless **chat_reasoning** — the model's thinking, shown while it happens and folded away after.
+
+  A native `<details>` whose summary reads `label` ("Thinking") while `status="streaming"` and
+  `done_label` ("Thought for 4 seconds" when `duration` is given) once `status="done"`. The
+  `ChatReasoning` hook opens it while thinking and closes it when done — unless the reader has
+  toggled it, in which case their choice wins. Without JavaScript it is still a working
+  disclosure.
+
+  Put reasoning prose in the default slot, or a trace in `:step` slots (the "steps", "search" and
+  "tool" shapes of beautiful-ui's thinking state): each step has a `label`, an optional `detail`
+  and `href`, and a `status` (`pending`, `active`, `done`, `error`).
+
+      <.chat_reasoning id="r-1" status={@thinking} duration={@thought_for}>
+        <:step label="Searching the web" detail="waffle cone suppliers" status="done" />
+        <:step label="Reading joycone.com" href="https://joycone.com" status="active" />
+      </.chat_reasoning>
+
+  Parts: `trigger`, `icon`, `label`, `content`, `steps`, `step`, `step-label`, `step-detail`.
+
+  Ships **no** colors, sizing or spacing — style via `chelekom-chat-reasoning*` (e.g. a shimmer on
+  `[data-status="streaming"] [data-part="label"]`).
+
+  **Documentation:** https://mishka.tools/chelekom/docs/headless/chat_reasoning
+  """
+  use Phoenix.Component
+
+  @doc type: :component
+  attr :id, :string, required: true, doc: "Unique id (carries the ChatReasoning hook)"
+
+  attr :status, :string,
+    default: "done",
+    values: ~w(streaming done),
+    doc: "streaming while the model thinks, done afterwards"
+
+  attr :label, :string, default: "Thinking", doc: "Summary while streaming"
+  attr :done_label, :string, default: nil, doc: ~s|Summary when done (default "Thought" / "Thought for N seconds")|
+  attr :duration, :integer, default: nil, doc: "How long the thinking took, in seconds"
+  attr :open, :boolean, default: false, doc: "Start open when done (streaming always starts open)"
+
+  attr :class, :any, default: nil, doc: "Extra classes for the root"
+  attr :trigger_class, :any, default: nil, doc: ~s|Extra classes for `data-part="trigger"`|
+  attr :icon_class, :any, default: nil, doc: ~s|Extra classes for `data-part="icon"`|
+  attr :label_class, :any, default: nil, doc: ~s|Extra classes for `data-part="label"`|
+  attr :content_class, :any, default: nil, doc: ~s|Extra classes for `data-part="content"`|
+  attr :steps_class, :any, default: nil, doc: ~s|Extra classes for `data-part="steps"`|
+  attr :step_class, :any, default: nil, doc: ~s|Extra classes for every `data-part="step"`|
+  attr :step_label_class, :any, default: nil, doc: ~s|Extra classes for `data-part="step-label"`|
+  attr :step_detail_class, :any, default: nil, doc: ~s|Extra classes for `data-part="step-detail"`|
+  attr :rest, :global
+
+  slot :icon, doc: "Glyph before the summary (a sparkle, a brain)"
+  slot :inner_block, doc: "Reasoning prose"
+
+  slot :step, doc: "One step of a thinking trace" do
+    attr :label, :string, required: true
+    attr :detail, :string, doc: "Secondary text: a query, a file, a domain"
+    attr :href, :string, doc: "Makes the label a link (a source that was read)"
+    attr :status, :string, doc: "pending | active | done | error"
+  end
+
+  def <%= @component_prefix %>chat_reasoning(assigns) do
+    assigns = assign(assigns, :summary, summary(assigns))
+
+    ~H"""
+    <details
+      id={@id}
+      phx-hook="ChatReasoning"
+      open={@open || @status == "streaming"}
+      aria-busy={to_string(@status == "streaming")}
+      data-part="root"
+      data-status={@status}
+      class={["chelekom-chat-reasoning", @class]}
+      {@rest}
+    >
+      <summary data-part="trigger" class={["chelekom-chat-reasoning__trigger", @trigger_class]}>
+        <span :if={@icon != []} data-part="icon" aria-hidden="true" class={["chelekom-chat-reasoning__icon", @icon_class]}>
+          {render_slot(@icon)}
+        </span>
+        <span
+          role="status"
+          data-part="label"
+          data-status={@status}
+          class={["chelekom-chat-reasoning__label", @label_class]}
+        >
+          {@summary}
+        </span>
+      </summary>
+
+      <div data-part="content" class={["chelekom-chat-reasoning__content", @content_class]}>
+        {render_slot(@inner_block)}
+        <ol :if={@step != []} data-part="steps" class={["chelekom-chat-reasoning__steps", @steps_class]}>
+          <li
+            :for={step <- @step}
+            data-part="step"
+            data-status={step[:status] || "done"}
+            aria-current={step[:status] == "active" && "step"}
+            class={["chelekom-chat-reasoning__step", @step_class]}
+          >
+            <a
+              :if={step[:href]}
+              href={step[:href]}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-part="step-label"
+              class={["chelekom-chat-reasoning__step-label", @step_label_class]}
+            >
+              {step.label}
+            </a>
+            <span
+              :if={!step[:href]}
+              data-part="step-label"
+              class={["chelekom-chat-reasoning__step-label", @step_label_class]}
+            >
+              {step.label}
+            </span>
+            <span
+              :if={step[:detail]}
+              data-part="step-detail"
+              class={["chelekom-chat-reasoning__step-detail", @step_detail_class]}
+            >
+              {step.detail}
+            </span>
+          </li>
+        </ol>
+      </div>
+    </details>
+    """
+  end
+
+  defp summary(%{status: "streaming", label: label}), do: label
+  defp summary(%{done_label: label}) when is_binary(label), do: label
+  defp summary(%{duration: nil}), do: "Thought"
+  defp summary(%{duration: 1}), do: "Thought for 1 second"
+  defp summary(%{duration: seconds}), do: "Thought for #{seconds} seconds"
+end

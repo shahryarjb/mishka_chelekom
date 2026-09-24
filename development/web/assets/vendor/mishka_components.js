@@ -54,6 +54,11 @@ import ThemeController from "./theme_controller.js";
 import Indeterminate from "./indeterminate.js";
 import HeadlessCarousel from "./headless_carousel.js";
 import Calendar from "./calendar.js";
+import ChatThread from "./chat_thread.js";
+import ChatStream from "./chat_stream.js";
+import ChatComposer from "./chat_composer.js";
+import ChatActionBar from "./chat_action_bar.js";
+import ChatReasoning from "./chat_reasoning.js";
 const Components = {
   Tooltip,
   PreviewCard,
@@ -111,5 +116,10 @@ const Components = {
   Indeterminate,
   HeadlessCarousel,
   Calendar,
+  ChatThread,
+  ChatStream,
+  ChatComposer,
+  ChatActionBar,
+  ChatReasoning,
 };
 export default Components;

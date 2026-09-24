@@ -104,6 +104,31 @@ defmodule DevelopmentWeb.Showcase.Meta do
     "chip" => "Selectable pill backed by a native checkbox or radio input.",
     "chart" =>
       "Declarative wrapper over a JS charting engine — ECharts by default, or Chart.js / billboard.js via --engine; the option is a plain map.",
+    "chat_action_bar" =>
+      "Copy, regenerate, edit and thumbs-up/down for a message; copy is built in and the bar can hide until hover.",
+    "chat_approval" =>
+      "Human-in-the-loop: the agent asks, the user approves, denies or picks options in a native form.",
+    "chat_attachment" =>
+      "A file chip with kind, size, thumbnail, upload progress and remove — maps onto a LiveView upload entry.",
+    "chat_branch_picker" => "The ‹ 2 / 3 › control for stepping between regenerated answers.",
+    "chat_composer" =>
+      "Auto-growing message box: Enter sends, Shift+Enter adds a line, IME-safe, stop while running.",
+    "chat_message" =>
+      "One turn of a conversation — role, status, avatar, name, time, attachments, error and actions.",
+    "chat_reasoning" =>
+      "The model's thinking: open while it streams, folded to \"Thought for 4s\" after, with a step trace.",
+    "chat_sources" => "Numbered citations for an answer, each opening in a new tab.",
+    "chat_stream" =>
+      "Token streaming by push_event deltas instead of re-rendering the whole answer, with optional smoothing.",
+    "chat_suggestions" => "Prompt chips that send with one click — starters and follow-ups.",
+    "chat_thread" =>
+      "The chat viewport: sticks to the newest message, lets go when you scroll up, loads older history.",
+    "chat_thread_list" =>
+      "The conversation history sidebar: new chat, active thread, archive and delete.",
+    "chat_tool_call" =>
+      "One tool the agent used — name, status, duration, arguments and result behind a disclosure.",
+    "chat_typing_indicator" =>
+      "The \"assistant is typing\" dots with a polite status for screen readers.",
     "close_button" => "Icon-only button with a required accessible label, for dismissing UI.",
     "code" => "Inline or block code, semantics only.",
     "collapsible" => "A single trigger/panel pair that expands and collapses.",

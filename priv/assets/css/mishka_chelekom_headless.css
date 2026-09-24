@@ -561,3 +561,43 @@
   height: 0;
   pointer-events: none;
 }
+
+/* Chat. The thread's viewport is the scroll container (the root only needs a height), and the
+ * welcome part steps aside as soon as the log has a child — a `:has()` rule, so it works with
+ * LiveView streams where the server keeps no count. */
+.chelekom-chat-thread {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
+.chelekom-chat-thread__viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.chelekom-chat-thread:has(.chelekom-chat-thread__messages > *) .chelekom-chat-thread__empty {
+  display: none;
+}
+
+/* Streamed text is plain text: keep the model's newlines. */
+.chelekom-chat-stream__text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Auto-hidden actions stay in the layout (`visibility`, not `display`), so nothing jumps on hover,
+ * and :focus-within keeps them usable from the keyboard. */
+.chelekom-chat-message:not(:hover):not(:focus-within)
+  .chelekom-chat-action-bar[data-autohide="always"],
+.chelekom-chat-message:not([data-last]):not(:hover):not(:focus-within)
+  .chelekom-chat-action-bar[data-autohide="not_last"] {
+  visibility: hidden;
+}
+
+.chelekom-chat-composer__input {
+  resize: none;
+}
