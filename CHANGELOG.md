@@ -1,6 +1,21 @@
 # Changelog for MishkaChelekom 0.0.10
 
 ### Features:
+- A headless `full_calendar`, a scheduler in one `Phoenix.LiveComponent` file:
+  - **Views:** month, week, day, list, a column per resource, and a timeline with a row per
+    resource.
+  - **Selection:** single, multiple or range, checked on the server against availability, business
+    hours, overlap and length rules. The cells a rule would refuse are marked before anyone clicks.
+  - **Presets:** `hotel` (check-out semantics, nightly prices, arrival-only days), `doctor` (one
+    column per doctor, each with their own hours) and `viewing` (several proposed slots).
+  - **Editing:** drag to move, drag the edge to resize, drag across days to select, and arrow-key
+    navigation, through one colocated hook (LiveView 1.1+) with nothing to wire.
+  - **Recurring events:** an RRULE subset, expanded only for the visible range.
+  - **Parent in control:** the parent LiveView owns the data and gets every pick, drop and range
+    change as a message.
+  - **Other calendar systems:** months are laid out through the `Calendar` behaviour, so a Jalali
+    (Shamsi) or other calendar module is an option. Labels, digits and RTL are configurable.
+  - `/showcase/calendar` runs it as a hotel, a clinic, a house-viewing planner and a team planner
 - The CMS bundle carries each attribute's own option list. A component's `args:` config already
   enumerates what `variant`, `color`, `size`, `rounded` and `padding` accept, and the exporter threw
   it away — a consumer had to recover the same lists from the `<%= if %>` gating around each helper

@@ -26,6 +26,7 @@ defmodule DevelopmentWeb.Router do
     live "/showcase/headless-baseui/:component", Showcase.HeadlessGalleryLive, :show
     live "/showcase/headless-daisyui", Showcase.HeadlessGalleryLive, :daisyui_index
     live "/showcase/headless-daisyui/:component", Showcase.HeadlessGalleryLive, :daisyui_show
+    live "/showcase/calendar", Showcase.CalendarDemoLive, :index
     live "/showcase/headless/:component", Showcase.HeadlessLive, :show
     live "/showcase/:component", Showcase.ComponentLive, :show
   end

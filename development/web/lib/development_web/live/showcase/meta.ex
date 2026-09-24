@@ -105,6 +105,8 @@ defmodule DevelopmentWeb.Showcase.Meta do
     "chart" =>
       "Declarative wrapper over a JS charting engine — ECharts by default, or Chart.js / billboard.js via --engine; the option is a plain map.",
     "close_button" => "Icon-only button with a required accessible label, for dismissing UI.",
+    "full_calendar" =>
+      "A LiveComponent scheduler — month, week, day, list, resources and timeline; bookings for hotels, clinics and viewings; drag, resize, recurring events.",
     "code" => "Inline or block code, semantics only.",
     "collapsible" => "A single trigger/panel pair that expands and collapses.",
     "color_swatch" => "Display a single color as a labelled swatch.",

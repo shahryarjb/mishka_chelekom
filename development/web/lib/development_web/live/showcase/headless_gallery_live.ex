@@ -16,6 +16,8 @@ defmodule DevelopmentWeb.Showcase.HeadlessGalleryLive do
   """
   use DevelopmentWeb, :live_view
 
+  alias DevelopmentWeb.Components.Headless.FullCalendar
+
   alias DevelopmentWeb.Showcase.{
     HeadlessBaseUIExamples,
     HeadlessCatalog,
@@ -145,6 +147,15 @@ defmodule DevelopmentWeb.Showcase.HeadlessGalleryLive do
                        daisyui_radio_group_submit
                        daisyui_file_input_submit) do
     {:noreply, assign(socket, submitted: inspect(Map.drop(params, ["_target", "_csrf_token"])))}
+  end
+
+  # `full_calendar` is a LiveComponent: it reports to the LiveView it lives in. The range it shows
+  # is noise here; a pick, a drop or a refusal is what the example is about.
+  @impl true
+  def handle_info({FullCalendar, _id, :dates_set, _range}, socket), do: {:noreply, socket}
+
+  def handle_info({FullCalendar, _id, name, payload}, socket) do
+    {:noreply, assign(socket, submitted: "#{name} #{inspect(payload, limit: 6)}")}
   end
 
   # Which examples show what the server received back. Every `*-form` section submits, and the

@@ -10,6 +10,7 @@ defmodule DevelopmentWeb.Showcase.HeadlessBaseUIExamples do
   import DevelopmentWeb.Components.Headless.Button
   import DevelopmentWeb.Components.Headless.Calendar
   import DevelopmentWeb.Components.Headless.Card
+  import DevelopmentWeb.Components.Headless.FullCalendar, only: [full_calendar: 1]
   import DevelopmentWeb.Components.Headless.Carousel
   import DevelopmentWeb.Components.Headless.Countdown
   import DevelopmentWeb.Components.Headless.Dock
@@ -98,6 +99,7 @@ defmodule DevelopmentWeb.Showcase.HeadlessBaseUIExamples do
   import DevelopmentWeb.Components.Headless.TreeSelect
   import DevelopmentWeb.Components.Headless.VisuallyHidden
 
+  alias DevelopmentWeb.Showcase.CalendarSamples
   alias DevelopmentWeb.Showcase.ExampleSource
   alias Phoenix.LiveView.JS
 
@@ -126,6 +128,16 @@ defmodule DevelopmentWeb.Showcase.HeadlessBaseUIExamples do
     do: [
       {"calendar-hero", "Hero", "A month grid with today outlined and one day selected."},
       {"calendar-range", "Range", "A start, an end, and the days between them."}
+    ]
+
+  def sections("full_calendar"),
+    do: [
+      {"full_calendar-hero", "Hero",
+       "A planner month: multi-day bars, a recurring stand-up, drag to move, drag across days to add."},
+      {"full_calendar-week", "Week",
+       "The time grid: overlapping events share the column, lunch is a background block."},
+      {"full_calendar-hotel", "Booking a stay",
+       "`preset=\"hotel\"` scoped to one room: nightly prices, booked nights refused, a two-night minimum."}
     ]
 
   def sections("card"),
@@ -882,6 +894,96 @@ defmodule DevelopmentWeb.Showcase.HeadlessBaseUIExamples do
       value={{~D[2026-03-09], ~D[2026-03-18]}}
       class="inline-flex flex-col gap-2 rounded-lg border border-neutral-200 bg-white p-3 text-neutral-950 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white [&_[data-part=header]]:flex [&_[data-part=header]]:items-center [&_[data-part=header]]:justify-between [&_[data-part=heading]]:text-sm [&_[data-part=heading]]:font-medium [&_[data-part=weekday]]:p-1 [&_[data-part=weekday]]:text-xs [&_[data-part=weekday]]:font-normal [&_[data-part=weekday]]:text-neutral-500 [&_[data-part=previous]]:size-7 [&_[data-part=next]]:size-7 [&_[data-part=previous]]:rounded-md [&_[data-part=next]]:rounded-md [&_[data-part=previous]]:hover:bg-neutral-100 [&_[data-part=next]]:hover:bg-neutral-100 dark:[&_[data-part=previous]]:hover:bg-neutral-800 dark:[&_[data-part=next]]:hover:bg-neutral-800"
       day_class="grid size-8 place-items-center rounded-md text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 data-[outside]:text-neutral-400 dark:data-[outside]:text-neutral-600 aria-[current=date]:ring-1 aria-[current=date]:ring-neutral-950 dark:aria-[current=date]:ring-white data-[selected]:bg-neutral-950 data-[selected]:text-white dark:data-[selected]:bg-white dark:data-[selected]:text-neutral-950 aria-[disabled=true]:text-neutral-300 dark:aria-[disabled=true]:text-neutral-700 data-[in-range]:rounded-none data-[in-range]:bg-neutral-100 dark:data-[in-range]:bg-neutral-800"
+    />
+    """
+  end
+
+  # ── full_calendar ─────────────────────────────────────────────────────────
+  def example(%{section: "full_calendar-hero"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="baseui-full_calendar-hero"
+      now={CalendarSamples.now()}
+      preset="planner"
+      events={CalendarSamples.events()}
+      class="w-full flex flex-col overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm text-neutral-950 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white [--fc-head-background:white] dark:[--fc-head-background:var(--color-neutral-950)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-neutral-200 p-2 dark:border-neutral-800"
+      title_class="text-sm font-medium"
+      nav_class="h-8 rounded-md px-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      view_button_class="h-8 rounded-md px-2.5 text-neutral-500 hover:bg-neutral-100 aria-pressed:bg-neutral-100 aria-pressed:text-neutral-950 dark:hover:bg-neutral-800 dark:aria-pressed:bg-neutral-800 dark:aria-pressed:text-white"
+      header_class="py-1.5 text-center text-xs text-neutral-500"
+      week_class="border-t border-neutral-200 dark:border-neutral-800"
+      day_class="border-e border-neutral-200 p-1 text-[11px] text-neutral-500 last:border-e-0 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-neutral-950 dark:border-neutral-800 dark:hover:bg-neutral-900 dark:focus-visible:outline-white data-[outside]:bg-neutral-50 dark:data-[outside]:bg-neutral-900/50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40 data-[selected]:bg-neutral-100 dark:data-[selected]:bg-neutral-800 data-[range-end]:bg-neutral-100 dark:data-[range-end]:bg-neutral-800 data-[anchor]:bg-neutral-200 dark:data-[anchor]:bg-neutral-700 data-[selecting]:bg-neutral-100"
+      day_number_class="m-1 grid size-6 place-items-center rounded-md text-xs data-[outside]:text-neutral-400 data-[today]:bg-neutral-950 data-[today]:text-white dark:data-[today]:bg-white dark:data-[today]:text-neutral-950"
+      slot_class="border-e border-b border-neutral-100 hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900 not-data-[business]:bg-neutral-50 dark:not-data-[business]:bg-neutral-900/50 data-[disabled]:cursor-not-allowed data-[selected]:bg-neutral-200 dark:data-[selected]:bg-neutral-700 data-[selecting]:bg-neutral-100"
+      axis_class="pe-2 text-end text-[11px] leading-none text-neutral-500"
+      event_class="m-px truncate rounded px-1.5 py-0.5 text-start text-xs text-white [background:var(--fc-event-color,var(--color-neutral-800))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="mx-1 rounded px-1 text-xs text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      popover_class="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-3 text-sm shadow-lg dark:border-neutral-800 dark:bg-neutral-950"
+      resource_class="flex items-center border-e border-b border-neutral-200 px-2 text-xs font-medium dark:border-neutral-800"
+      now_class="border-t border-red-500"
+      status_class="flex items-center justify-between gap-2 px-2 py-1 text-xs text-red-600 data-[empty]:hidden"
+    />
+    """
+  end
+
+  def example(%{section: "full_calendar-week"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="baseui-full_calendar-week"
+      now={CalendarSamples.now()}
+      preset="planner"
+      view="week"
+      events={CalendarSamples.events()}
+      class="w-full flex flex-col overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm text-neutral-950 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white [--fc-head-background:white] dark:[--fc-head-background:var(--color-neutral-950)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-neutral-200 p-2 dark:border-neutral-800"
+      title_class="text-sm font-medium"
+      nav_class="h-8 rounded-md px-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      view_button_class="h-8 rounded-md px-2.5 text-neutral-500 hover:bg-neutral-100 aria-pressed:bg-neutral-100 aria-pressed:text-neutral-950 dark:hover:bg-neutral-800 dark:aria-pressed:bg-neutral-800 dark:aria-pressed:text-white"
+      header_class="py-1.5 text-center text-xs text-neutral-500"
+      week_class="border-t border-neutral-200 dark:border-neutral-800"
+      day_class="border-e border-neutral-200 p-1 text-[11px] text-neutral-500 last:border-e-0 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-neutral-950 dark:border-neutral-800 dark:hover:bg-neutral-900 dark:focus-visible:outline-white data-[outside]:bg-neutral-50 dark:data-[outside]:bg-neutral-900/50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40 data-[selected]:bg-neutral-100 dark:data-[selected]:bg-neutral-800 data-[range-end]:bg-neutral-100 dark:data-[range-end]:bg-neutral-800 data-[anchor]:bg-neutral-200 dark:data-[anchor]:bg-neutral-700 data-[selecting]:bg-neutral-100"
+      day_number_class="m-1 grid size-6 place-items-center rounded-md text-xs data-[outside]:text-neutral-400 data-[today]:bg-neutral-950 data-[today]:text-white dark:data-[today]:bg-white dark:data-[today]:text-neutral-950"
+      slot_class="border-e border-b border-neutral-100 hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900 not-data-[business]:bg-neutral-50 dark:not-data-[business]:bg-neutral-900/50 data-[disabled]:cursor-not-allowed data-[selected]:bg-neutral-200 dark:data-[selected]:bg-neutral-700 data-[selecting]:bg-neutral-100"
+      axis_class="pe-2 text-end text-[11px] leading-none text-neutral-500"
+      event_class="m-px truncate rounded px-1.5 py-0.5 text-start text-xs text-white [background:var(--fc-event-color,var(--color-neutral-800))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="mx-1 rounded px-1 text-xs text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      popover_class="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-3 text-sm shadow-lg dark:border-neutral-800 dark:bg-neutral-950"
+      resource_class="flex items-center border-e border-b border-neutral-200 px-2 text-xs font-medium dark:border-neutral-800"
+      now_class="border-t border-red-500"
+      status_class="flex items-center justify-between gap-2 px-2 py-1 text-xs text-red-600 data-[empty]:hidden"
+    />
+    """
+  end
+
+  def example(%{section: "full_calendar-hotel"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="baseui-full_calendar-hotel"
+      now={CalendarSamples.now()}
+      preset="hotel"
+      min_nights={2}
+      resource_id="101"
+      resources={CalendarSamples.rooms()}
+      events={CalendarSamples.bookings()}
+      day_info={CalendarSamples.prices()}
+      class="w-full flex flex-col overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm text-neutral-950 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white [--fc-head-background:white] dark:[--fc-head-background:var(--color-neutral-950)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-neutral-200 p-2 dark:border-neutral-800"
+      title_class="text-sm font-medium"
+      nav_class="h-8 rounded-md px-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      view_button_class="h-8 rounded-md px-2.5 text-neutral-500 hover:bg-neutral-100 aria-pressed:bg-neutral-100 aria-pressed:text-neutral-950 dark:hover:bg-neutral-800 dark:aria-pressed:bg-neutral-800 dark:aria-pressed:text-white"
+      header_class="py-1.5 text-center text-xs text-neutral-500"
+      week_class="border-t border-neutral-200 dark:border-neutral-800"
+      day_class="border-e border-neutral-200 p-1 text-[11px] text-neutral-500 last:border-e-0 hover:bg-neutral-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-neutral-950 dark:border-neutral-800 dark:hover:bg-neutral-900 dark:focus-visible:outline-white data-[outside]:bg-neutral-50 dark:data-[outside]:bg-neutral-900/50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40 data-[selected]:bg-neutral-100 dark:data-[selected]:bg-neutral-800 data-[range-end]:bg-neutral-100 dark:data-[range-end]:bg-neutral-800 data-[anchor]:bg-neutral-200 dark:data-[anchor]:bg-neutral-700 data-[selecting]:bg-neutral-100"
+      day_number_class="m-1 grid size-6 place-items-center rounded-md text-xs data-[outside]:text-neutral-400 data-[today]:bg-neutral-950 data-[today]:text-white dark:data-[today]:bg-white dark:data-[today]:text-neutral-950"
+      slot_class="border-e border-b border-neutral-100 hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900 not-data-[business]:bg-neutral-50 dark:not-data-[business]:bg-neutral-900/50 data-[disabled]:cursor-not-allowed data-[selected]:bg-neutral-200 dark:data-[selected]:bg-neutral-700 data-[selecting]:bg-neutral-100"
+      axis_class="pe-2 text-end text-[11px] leading-none text-neutral-500"
+      event_class="m-px truncate rounded px-1.5 py-0.5 text-start text-xs text-white [background:var(--fc-event-color,var(--color-neutral-800))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="mx-1 rounded px-1 text-xs text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+      popover_class="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-3 text-sm shadow-lg dark:border-neutral-800 dark:bg-neutral-950"
+      resource_class="flex items-center border-e border-b border-neutral-200 px-2 text-xs font-medium dark:border-neutral-800"
+      now_class="border-t border-red-500"
+      status_class="flex items-center justify-between gap-2 px-2 py-1 text-xs text-red-600 data-[empty]:hidden"
     />
     """
   end

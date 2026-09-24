@@ -9,6 +9,8 @@ defmodule DevelopmentWeb.Showcase.HeadlessLive do
 
   import DevelopmentWeb.Showcase.UI
 
+  alias DevelopmentWeb.Components.Headless.FullCalendar
+
   alias DevelopmentWeb.Showcase.{
     HeadlessApi,
     HeadlessCatalog,
@@ -20,6 +22,11 @@ defmodule DevelopmentWeb.Showcase.HeadlessLive do
 
   @impl true
   def mount(_params, _session, socket), do: {:ok, assign(socket, :catalog, HeadlessCatalog.all())}
+
+  # The `full_calendar` preview is a LiveComponent that reports to its LiveView; the reference page
+  # has nothing to save, so it listens and moves on.
+  @impl true
+  def handle_info({FullCalendar, _id, _name, _payload}, socket), do: {:noreply, socket}
 
   @impl true
   def handle_params(%{"component" => name}, _uri, socket) do

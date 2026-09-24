@@ -17,6 +17,7 @@ defmodule DevelopmentWeb.Showcase.HeadlessDaisyUIExamples do
   """
   use Phoenix.Component
 
+  alias DevelopmentWeb.Showcase.CalendarSamples
   alias DevelopmentWeb.Showcase.ExampleSource
   alias Phoenix.LiveView.JS
 
@@ -112,6 +113,7 @@ defmodule DevelopmentWeb.Showcase.HeadlessDaisyUIExamples do
   import DevelopmentWeb.Components.Headless.Table
   import DevelopmentWeb.Components.Headless.Carousel
   import DevelopmentWeb.Components.Headless.Calendar
+  import DevelopmentWeb.Components.Headless.FullCalendar, only: [full_calendar: 1]
   import DevelopmentWeb.Components.Headless.RadioGroup
 
   @faq [
@@ -555,6 +557,21 @@ defmodule DevelopmentWeb.Showcase.HeadlessDaisyUIExamples do
        "`show_outside_days={false}` and `fixed_weeks={false}`. February 2027 starts on a Monday and has 28 days, so it needs exactly four rows — and gets four, instead of six with two of them empty."},
       {"calendar-live", "Live",
        "`on_select` and `on_month_change` push to the server; the arrow keys page the month by themselves and land on the day the keys were heading for."}
+    ],
+    "full_calendar" => [
+      {"full_calendar-hero", "Full calendar",
+       "daisyUI has no scheduler either. One LiveComponent does month, week, day, list, resources and a timeline; the grid is laid out on the server, and the colocated hook only drags, resizes and moves focus."},
+      {"full_calendar-week", "Week",
+       "Overlapping events split the column the way FullCalendar does, and widen into free space. Drag one, or drag its bottom edge."},
+      {"full_calendar-doctor", "Appointments",
+       "`preset=\"doctor\"`: one column per doctor with their own hours, a 15 minute grid, booked and out-of-hours slots refused before anyone clicks."},
+      {"full_calendar-hotel", "Booking a stay",
+       "`preset=\"hotel\"`: check-in and check-out days, nightly prices from `day_info`, nights already sold greyed out."},
+      {"full_calendar-timeline", "Room chart",
+       "The timeline view: a row per room, the days across. Drag a stay along a row."},
+      {"full_calendar-viewing", "Viewing slots",
+       "`preset=\"viewing\"`: pick up to three half-hour slots; a picked slot toggles off."},
+      {"full_calendar-list", "Agenda", "The list view: the coming week, grouped by day."}
     ],
     "carousel" => [
       {"carousel-hero", "Snap to start",
@@ -6476,6 +6493,219 @@ defmodule DevelopmentWeb.Showcase.HeadlessDaisyUIExamples do
       today={~D[2026-03-17]}
       on_select="daisyui_calendar_select"
       on_month_change="daisyui_calendar_month"
+    />
+    """
+  end
+
+  # ── full_calendar ─────────────────────────────────────────────────────────
+  def example(%{section: "full_calendar-hero"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="daisyui-full_calendar-hero"
+      now={CalendarSamples.now()}
+      preset="planner"
+      events={CalendarSamples.events()}
+      class="w-full flex flex-col overflow-hidden rounded-[var(--radius-box)] border border-base-300 bg-base-100 text-sm text-base-content [--fc-head-background:var(--color-base-100)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-base-300 p-2"
+      title_class="text-base font-semibold"
+      nav_class="d-btn d-btn-sm d-btn-ghost"
+      view_button_class="d-btn d-btn-sm d-btn-ghost aria-pressed:bg-primary aria-pressed:text-primary-content"
+      header_class="py-1.5 text-center text-xs font-medium opacity-60 data-[today]:text-primary data-[today]:opacity-100"
+      week_class="border-t border-base-300"
+      day_class="border-e border-base-300 p-1 text-[11px] text-success last:border-e-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-base-content data-[outside]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[disabled]:text-base-content/30 data-[disabled]:bg-[repeating-linear-gradient(135deg,transparent_0_6px,color-mix(in_oklab,var(--color-base-content)_6%,transparent)_6px_12px)] data-[selected]:bg-primary/15 data-[range-end]:bg-primary/15 data-[anchor]:bg-primary/30 data-[selecting]:bg-primary/10"
+      day_number_class="m-1 grid size-6 place-items-center rounded-full text-xs data-[outside]:opacity-40 data-[today]:bg-primary data-[today]:text-primary-content"
+      slot_class="border-e border-b border-base-200 hover:bg-primary/5 not-data-[business]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[selected]:bg-primary/25 data-[selecting]:bg-primary/10"
+      axis_class="pe-2 text-end text-[11px] leading-none opacity-60"
+      event_class="m-px truncate rounded-[var(--radius-field)] px-1.5 py-0.5 text-start text-xs font-medium text-primary-content [background:var(--fc-event-color,var(--color-primary))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="d-btn d-btn-xs d-btn-ghost mx-1"
+      popover_class="d-card d-card-border flex flex-col gap-1 bg-base-100 p-3 shadow-xl"
+      list_day_class="flex flex-col gap-1 border-b border-base-300 p-3 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:opacity-60"
+      resource_class="flex items-center border-e border-b border-base-300 px-2 text-xs font-medium"
+      now_class="border-t-2 border-error"
+      status_class="d-alert d-alert-error d-alert-soft rounded-none py-1.5 text-xs data-[empty]:hidden"
+    />
+    """
+  end
+
+  def example(%{section: "full_calendar-week"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="daisyui-full_calendar-week"
+      now={CalendarSamples.now()}
+      preset="planner"
+      view="week"
+      events={CalendarSamples.events()}
+      class="w-full flex flex-col overflow-hidden rounded-[var(--radius-box)] border border-base-300 bg-base-100 text-sm text-base-content [--fc-head-background:var(--color-base-100)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-base-300 p-2"
+      title_class="text-base font-semibold"
+      nav_class="d-btn d-btn-sm d-btn-ghost"
+      view_button_class="d-btn d-btn-sm d-btn-ghost aria-pressed:bg-primary aria-pressed:text-primary-content"
+      header_class="py-1.5 text-center text-xs font-medium opacity-60 data-[today]:text-primary data-[today]:opacity-100"
+      week_class="border-t border-base-300"
+      day_class="border-e border-base-300 p-1 text-[11px] text-success last:border-e-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-base-content data-[outside]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[disabled]:text-base-content/30 data-[disabled]:bg-[repeating-linear-gradient(135deg,transparent_0_6px,color-mix(in_oklab,var(--color-base-content)_6%,transparent)_6px_12px)] data-[selected]:bg-primary/15 data-[range-end]:bg-primary/15 data-[anchor]:bg-primary/30 data-[selecting]:bg-primary/10"
+      day_number_class="m-1 grid size-6 place-items-center rounded-full text-xs data-[outside]:opacity-40 data-[today]:bg-primary data-[today]:text-primary-content"
+      slot_class="border-e border-b border-base-200 hover:bg-primary/5 not-data-[business]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[selected]:bg-primary/25 data-[selecting]:bg-primary/10"
+      axis_class="pe-2 text-end text-[11px] leading-none opacity-60"
+      event_class="m-px truncate rounded-[var(--radius-field)] px-1.5 py-0.5 text-start text-xs font-medium text-primary-content [background:var(--fc-event-color,var(--color-primary))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="d-btn d-btn-xs d-btn-ghost mx-1"
+      popover_class="d-card d-card-border flex flex-col gap-1 bg-base-100 p-3 shadow-xl"
+      list_day_class="flex flex-col gap-1 border-b border-base-300 p-3 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:opacity-60"
+      resource_class="flex items-center border-e border-b border-base-300 px-2 text-xs font-medium"
+      now_class="border-t-2 border-error"
+      status_class="d-alert d-alert-error d-alert-soft rounded-none py-1.5 text-xs data-[empty]:hidden"
+    />
+    """
+  end
+
+  def example(%{section: "full_calendar-doctor"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="daisyui-full_calendar-doctor"
+      now={CalendarSamples.now()}
+      preset="doctor"
+      resources={CalendarSamples.doctors()}
+      events={CalendarSamples.appointments()}
+      class="w-full flex flex-col overflow-hidden rounded-[var(--radius-box)] border border-base-300 bg-base-100 text-sm text-base-content [--fc-head-background:var(--color-base-100)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-base-300 p-2"
+      title_class="text-base font-semibold"
+      nav_class="d-btn d-btn-sm d-btn-ghost"
+      view_button_class="d-btn d-btn-sm d-btn-ghost aria-pressed:bg-primary aria-pressed:text-primary-content"
+      header_class="py-1.5 text-center text-xs font-medium opacity-60 data-[today]:text-primary data-[today]:opacity-100"
+      week_class="border-t border-base-300"
+      day_class="border-e border-base-300 p-1 text-[11px] text-success last:border-e-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-base-content data-[outside]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[disabled]:text-base-content/30 data-[disabled]:bg-[repeating-linear-gradient(135deg,transparent_0_6px,color-mix(in_oklab,var(--color-base-content)_6%,transparent)_6px_12px)] data-[selected]:bg-primary/15 data-[range-end]:bg-primary/15 data-[anchor]:bg-primary/30 data-[selecting]:bg-primary/10"
+      day_number_class="m-1 grid size-6 place-items-center rounded-full text-xs data-[outside]:opacity-40 data-[today]:bg-primary data-[today]:text-primary-content"
+      slot_class="border-e border-b border-base-200 hover:bg-primary/5 not-data-[business]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[selected]:bg-primary/25 data-[selecting]:bg-primary/10"
+      axis_class="pe-2 text-end text-[11px] leading-none opacity-60"
+      event_class="m-px truncate rounded-[var(--radius-field)] px-1.5 py-0.5 text-start text-xs font-medium text-primary-content [background:var(--fc-event-color,var(--color-primary))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="d-btn d-btn-xs d-btn-ghost mx-1"
+      popover_class="d-card d-card-border flex flex-col gap-1 bg-base-100 p-3 shadow-xl"
+      list_day_class="flex flex-col gap-1 border-b border-base-300 p-3 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:opacity-60"
+      resource_class="flex items-center border-e border-b border-base-300 px-2 text-xs font-medium"
+      now_class="border-t-2 border-error"
+      status_class="d-alert d-alert-error d-alert-soft rounded-none py-1.5 text-xs data-[empty]:hidden"
+    />
+    """
+  end
+
+  def example(%{section: "full_calendar-hotel"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="daisyui-full_calendar-hotel"
+      now={CalendarSamples.now()}
+      preset="hotel"
+      min_nights={2}
+      resource_id="101"
+      resources={CalendarSamples.rooms()}
+      events={CalendarSamples.bookings()}
+      day_info={CalendarSamples.prices()}
+      class="w-full flex flex-col overflow-hidden rounded-[var(--radius-box)] border border-base-300 bg-base-100 text-sm text-base-content [--fc-head-background:var(--color-base-100)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-base-300 p-2"
+      title_class="text-base font-semibold"
+      nav_class="d-btn d-btn-sm d-btn-ghost"
+      view_button_class="d-btn d-btn-sm d-btn-ghost aria-pressed:bg-primary aria-pressed:text-primary-content"
+      header_class="py-1.5 text-center text-xs font-medium opacity-60 data-[today]:text-primary data-[today]:opacity-100"
+      week_class="border-t border-base-300"
+      day_class="border-e border-base-300 p-1 text-[11px] text-success last:border-e-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-base-content data-[outside]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[disabled]:text-base-content/30 data-[disabled]:bg-[repeating-linear-gradient(135deg,transparent_0_6px,color-mix(in_oklab,var(--color-base-content)_6%,transparent)_6px_12px)] data-[selected]:bg-primary/15 data-[range-end]:bg-primary/15 data-[anchor]:bg-primary/30 data-[selecting]:bg-primary/10"
+      day_number_class="m-1 grid size-6 place-items-center rounded-full text-xs data-[outside]:opacity-40 data-[today]:bg-primary data-[today]:text-primary-content"
+      slot_class="border-e border-b border-base-200 hover:bg-primary/5 not-data-[business]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[selected]:bg-primary/25 data-[selecting]:bg-primary/10"
+      axis_class="pe-2 text-end text-[11px] leading-none opacity-60"
+      event_class="m-px truncate rounded-[var(--radius-field)] px-1.5 py-0.5 text-start text-xs font-medium text-primary-content [background:var(--fc-event-color,var(--color-primary))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="d-btn d-btn-xs d-btn-ghost mx-1"
+      popover_class="d-card d-card-border flex flex-col gap-1 bg-base-100 p-3 shadow-xl"
+      list_day_class="flex flex-col gap-1 border-b border-base-300 p-3 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:opacity-60"
+      resource_class="flex items-center border-e border-b border-base-300 px-2 text-xs font-medium"
+      now_class="border-t-2 border-error"
+      status_class="d-alert d-alert-error d-alert-soft rounded-none py-1.5 text-xs data-[empty]:hidden"
+    />
+    """
+  end
+
+  def example(%{section: "full_calendar-timeline"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="daisyui-full_calendar-timeline"
+      now={CalendarSamples.now()}
+      preset="hotel"
+      view="timeline"
+      resources={CalendarSamples.rooms()}
+      events={CalendarSamples.bookings()}
+      class="w-full flex flex-col overflow-hidden rounded-[var(--radius-box)] border border-base-300 bg-base-100 text-sm text-base-content [--fc-head-background:var(--color-base-100)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-base-300 p-2"
+      title_class="text-base font-semibold"
+      nav_class="d-btn d-btn-sm d-btn-ghost"
+      view_button_class="d-btn d-btn-sm d-btn-ghost aria-pressed:bg-primary aria-pressed:text-primary-content"
+      header_class="py-1.5 text-center text-xs font-medium opacity-60 data-[today]:text-primary data-[today]:opacity-100"
+      week_class="border-t border-base-300"
+      day_class="border-e border-base-300 p-1 text-[11px] text-success last:border-e-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-base-content data-[outside]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[disabled]:text-base-content/30 data-[disabled]:bg-[repeating-linear-gradient(135deg,transparent_0_6px,color-mix(in_oklab,var(--color-base-content)_6%,transparent)_6px_12px)] data-[selected]:bg-primary/15 data-[range-end]:bg-primary/15 data-[anchor]:bg-primary/30 data-[selecting]:bg-primary/10"
+      day_number_class="m-1 grid size-6 place-items-center rounded-full text-xs data-[outside]:opacity-40 data-[today]:bg-primary data-[today]:text-primary-content"
+      slot_class="border-e border-b border-base-200 hover:bg-primary/5 not-data-[business]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[selected]:bg-primary/25 data-[selecting]:bg-primary/10"
+      axis_class="pe-2 text-end text-[11px] leading-none opacity-60"
+      event_class="m-px truncate rounded-[var(--radius-field)] px-1.5 py-0.5 text-start text-xs font-medium text-primary-content [background:var(--fc-event-color,var(--color-primary))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="d-btn d-btn-xs d-btn-ghost mx-1"
+      popover_class="d-card d-card-border flex flex-col gap-1 bg-base-100 p-3 shadow-xl"
+      list_day_class="flex flex-col gap-1 border-b border-base-300 p-3 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:opacity-60"
+      resource_class="flex items-center border-e border-b border-base-300 px-2 text-xs font-medium"
+      now_class="border-t-2 border-error"
+      status_class="d-alert d-alert-error d-alert-soft rounded-none py-1.5 text-xs data-[empty]:hidden"
+    />
+    """
+  end
+
+  def example(%{section: "full_calendar-viewing"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="daisyui-full_calendar-viewing"
+      now={CalendarSamples.now()}
+      preset="viewing"
+      events={CalendarSamples.events()}
+      class="w-full flex flex-col overflow-hidden rounded-[var(--radius-box)] border border-base-300 bg-base-100 text-sm text-base-content [--fc-head-background:var(--color-base-100)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-base-300 p-2"
+      title_class="text-base font-semibold"
+      nav_class="d-btn d-btn-sm d-btn-ghost"
+      view_button_class="d-btn d-btn-sm d-btn-ghost aria-pressed:bg-primary aria-pressed:text-primary-content"
+      header_class="py-1.5 text-center text-xs font-medium opacity-60 data-[today]:text-primary data-[today]:opacity-100"
+      week_class="border-t border-base-300"
+      day_class="border-e border-base-300 p-1 text-[11px] text-success last:border-e-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-base-content data-[outside]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[disabled]:text-base-content/30 data-[disabled]:bg-[repeating-linear-gradient(135deg,transparent_0_6px,color-mix(in_oklab,var(--color-base-content)_6%,transparent)_6px_12px)] data-[selected]:bg-primary/15 data-[range-end]:bg-primary/15 data-[anchor]:bg-primary/30 data-[selecting]:bg-primary/10"
+      day_number_class="m-1 grid size-6 place-items-center rounded-full text-xs data-[outside]:opacity-40 data-[today]:bg-primary data-[today]:text-primary-content"
+      slot_class="border-e border-b border-base-200 hover:bg-primary/5 not-data-[business]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[selected]:bg-primary/25 data-[selecting]:bg-primary/10"
+      axis_class="pe-2 text-end text-[11px] leading-none opacity-60"
+      event_class="m-px truncate rounded-[var(--radius-field)] px-1.5 py-0.5 text-start text-xs font-medium text-primary-content [background:var(--fc-event-color,var(--color-primary))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="d-btn d-btn-xs d-btn-ghost mx-1"
+      popover_class="d-card d-card-border flex flex-col gap-1 bg-base-100 p-3 shadow-xl"
+      list_day_class="flex flex-col gap-1 border-b border-base-300 p-3 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:opacity-60"
+      resource_class="flex items-center border-e border-b border-base-300 px-2 text-xs font-medium"
+      now_class="border-t-2 border-error"
+      status_class="d-alert d-alert-error d-alert-soft rounded-none py-1.5 text-xs data-[empty]:hidden"
+    />
+    """
+  end
+
+  def example(%{section: "full_calendar-list"} = assigns) do
+    ~H"""
+    <.full_calendar
+      id="daisyui-full_calendar-list"
+      now={CalendarSamples.now()}
+      view="list"
+      views={["month", "week", "list"]}
+      events={CalendarSamples.events()}
+      class="w-full flex flex-col overflow-hidden rounded-[var(--radius-box)] border border-base-300 bg-base-100 text-sm text-base-content [--fc-head-background:var(--color-base-100)] [--fc-row-min-height:5.5rem] [--fc-scroll-height:26rem] [--fc-slot-height:2rem]"
+      toolbar_class="gap-2 border-b border-base-300 p-2"
+      title_class="text-base font-semibold"
+      nav_class="d-btn d-btn-sm d-btn-ghost"
+      view_button_class="d-btn d-btn-sm d-btn-ghost aria-pressed:bg-primary aria-pressed:text-primary-content"
+      header_class="py-1.5 text-center text-xs font-medium opacity-60 data-[today]:text-primary data-[today]:opacity-100"
+      week_class="border-t border-base-300"
+      day_class="border-e border-base-300 p-1 text-[11px] text-success last:border-e-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-base-content data-[outside]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[disabled]:text-base-content/30 data-[disabled]:bg-[repeating-linear-gradient(135deg,transparent_0_6px,color-mix(in_oklab,var(--color-base-content)_6%,transparent)_6px_12px)] data-[selected]:bg-primary/15 data-[range-end]:bg-primary/15 data-[anchor]:bg-primary/30 data-[selecting]:bg-primary/10"
+      day_number_class="m-1 grid size-6 place-items-center rounded-full text-xs data-[outside]:opacity-40 data-[today]:bg-primary data-[today]:text-primary-content"
+      slot_class="border-e border-b border-base-200 hover:bg-primary/5 not-data-[business]:bg-base-200/60 data-[disabled]:cursor-not-allowed data-[selected]:bg-primary/25 data-[selecting]:bg-primary/10"
+      axis_class="pe-2 text-end text-[11px] leading-none opacity-60"
+      event_class="m-px truncate rounded-[var(--radius-field)] px-1.5 py-0.5 text-start text-xs font-medium text-primary-content [background:var(--fc-event-color,var(--color-primary))] data-[dragging]:opacity-80 data-[dragging]:shadow-lg"
+      more_class="d-btn d-btn-xs d-btn-ghost mx-1"
+      popover_class="d-card d-card-border flex flex-col gap-1 bg-base-100 p-3 shadow-xl"
+      list_day_class="flex flex-col gap-1 border-b border-base-300 p-3 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:opacity-60"
+      resource_class="flex items-center border-e border-b border-base-300 px-2 text-xs font-medium"
+      now_class="border-t-2 border-error"
+      status_class="d-alert d-alert-error d-alert-soft rounded-none py-1.5 text-xs data-[empty]:hidden"
     />
     """
   end

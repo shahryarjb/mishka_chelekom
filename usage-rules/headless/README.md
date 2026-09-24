@@ -53,6 +53,7 @@ No `--color/--variant/--size/--padding` options (meaningless for headless).
 | meter | Meter | — |
 | scroll_area | (scroll viewport) | — |
 | toast | Alert / live region | ToastRegion |
+| full_calendar | Grid (LiveComponent) | `.FullCalendar` (colocated) |
 
 > Headless `form` is intentionally omitted — Phoenix already ships `<.form>`. Use `field` /
 > `fieldset` for grouping.

@@ -561,3 +561,298 @@
   height: 0;
   pointer-events: none;
 }
+
+/* Full calendar: layout only. The component sets these per element (`style`):
+ *   --fc-cols, --fc-levels             columns and event rows of a day row
+ *   --fc-col, --fc-span, --fc-level    where a bar or a cell sits in its row
+ *   --fc-top, --fc-height              timed events, the now line (percent of the day window)
+ *   --fc-left, --fc-width              side-by-side overlapping events (percent of the column)
+ *   --fc-event-color                   the event's own `color`, for the skin to use
+ * and these are the knobs a skin can turn:
+ *   --fc-slot-height, --fc-axis-width, --fc-row-min-height, --fc-lane-min-height,
+ *   --fc-scroll-height, --fc-resource-width, --fc-day-min-width, --fc-week-number-width,
+ *   --fc-head-background */
+.chelekom-full-calendar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chelekom-full-calendar[data-dragging] {
+  user-select: none;
+}
+
+.chelekom-full-calendar__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chelekom-full-calendar [data-part="nav"],
+.chelekom-full-calendar [data-part="views"] {
+  display: inline-flex;
+}
+
+.chelekom-full-calendar__view {
+  position: relative;
+  min-width: 0;
+}
+
+.chelekom-full-calendar [data-part="header-row"],
+.chelekom-full-calendar [data-part="week-wrap"],
+.chelekom-full-calendar [data-part="all-day"],
+.chelekom-full-calendar [data-part="body"],
+.chelekom-full-calendar [data-part="timeline-row"] {
+  display: flex;
+}
+
+.chelekom-full-calendar__header,
+.chelekom-full-calendar [data-part="week-wrap"] > .chelekom-full-calendar__week,
+.chelekom-full-calendar [data-part="all-day"] > .chelekom-full-calendar__week,
+.chelekom-full-calendar
+  [data-part="timeline-row"]
+  > .chelekom-full-calendar__week,
+.chelekom-full-calendar [data-part="column"] {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.chelekom-full-calendar [data-part="week-number"] {
+  flex: 0 0 var(--fc-week-number-width, 2rem);
+}
+
+/* A day row: day cells span every row, bars sit on their level, "+N more" below them. */
+.chelekom-full-calendar__week {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--fc-cols), minmax(0, 1fr));
+  grid-template-rows: auto repeat(var(--fc-levels), auto) auto 1fr;
+  min-height: var(--fc-row-min-height, 6rem);
+}
+
+.chelekom-full-calendar__day {
+  position: relative;
+  grid-column: var(--fc-col);
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.chelekom-full-calendar__day[data-disabled] {
+  cursor: not-allowed;
+}
+
+.chelekom-full-calendar__day-number {
+  position: relative;
+  z-index: 1;
+  grid-column: var(--fc-col);
+  grid-row: 1;
+  justify-self: end;
+}
+
+span.chelekom-full-calendar__day-number {
+  pointer-events: none;
+}
+
+.chelekom-full-calendar__event {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-align: start;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.chelekom-full-calendar__week > .chelekom-full-calendar__event {
+  grid-column: var(--fc-col) / span var(--fc-span);
+  grid-row: calc(var(--fc-level) + 2);
+}
+
+.chelekom-full-calendar__event[data-editable] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.chelekom-full-calendar__event[data-dragging] {
+  z-index: 20;
+  cursor: grabbing;
+}
+
+.chelekom-full-calendar [data-part="resizer"] {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 0.375rem;
+  cursor: ns-resize;
+}
+
+.chelekom-full-calendar__week
+  > .chelekom-full-calendar__event
+  [data-part="resizer"] {
+  inset-block: 0;
+  inset-inline-start: auto;
+  width: 0.375rem;
+  height: auto;
+  cursor: ew-resize;
+}
+
+.chelekom-full-calendar__more {
+  position: relative;
+  z-index: 2;
+  grid-column: var(--fc-col);
+  grid-row: calc(var(--fc-levels) + 2);
+  justify-self: start;
+}
+
+.chelekom-full-calendar__more-popover {
+  position: absolute;
+  z-index: 25;
+  grid-column: var(--fc-col);
+  grid-row: 1 / -1;
+  inset-inline-start: 0;
+  top: 0;
+  min-width: 100%;
+  width: max-content;
+  max-width: 18rem;
+}
+
+.chelekom-full-calendar__more-popover[hidden] {
+  display: none;
+}
+
+.chelekom-full-calendar__more-popover .chelekom-full-calendar__event,
+.chelekom-full-calendar [data-part="list"] .chelekom-full-calendar__event {
+  display: flex;
+  gap: 0.5em;
+  width: 100%;
+}
+
+/* Time grid: a scroller whose head (column titles + all-day lane) sticks to its top. */
+.chelekom-full-calendar [data-part="scroller"] {
+  position: relative;
+  max-height: var(--fc-scroll-height, 36rem);
+  overflow-y: auto;
+}
+
+.chelekom-full-calendar [data-part="head"] {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--fc-head-background, canvas);
+}
+
+.chelekom-full-calendar [data-part="corner"],
+.chelekom-full-calendar [data-part="all-day"] > .chelekom-full-calendar__axis,
+.chelekom-full-calendar [data-part="axis-column"] {
+  flex: 0 0 var(--fc-axis-width, 3.5rem);
+}
+
+.chelekom-full-calendar [data-part="all-day"] > .chelekom-full-calendar__week,
+.chelekom-full-calendar
+  [data-part="timeline-row"]
+  > .chelekom-full-calendar__week {
+  min-height: var(--fc-lane-min-height, 2.25rem);
+}
+
+.chelekom-full-calendar [data-part="axis-column"],
+.chelekom-full-calendar [data-part="column"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.chelekom-full-calendar [data-part="column"] {
+  position: relative;
+}
+
+.chelekom-full-calendar
+  [data-part="axis-column"]
+  > .chelekom-full-calendar__axis,
+.chelekom-full-calendar__slot {
+  flex: none;
+  height: var(--fc-slot-height, 2.5rem);
+}
+
+.chelekom-full-calendar__slot {
+  width: 100%;
+}
+
+.chelekom-full-calendar [data-part="column"] > .chelekom-full-calendar__event,
+.chelekom-full-calendar [data-part="background"],
+.chelekom-full-calendar__now {
+  position: absolute;
+  top: calc(var(--fc-top) * 1%);
+}
+
+.chelekom-full-calendar [data-part="column"] > .chelekom-full-calendar__event {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  inset-inline-start: calc(var(--fc-left) * 1%);
+  width: calc(var(--fc-width) * 1%);
+  height: calc(var(--fc-height) * 1%);
+  white-space: normal;
+}
+
+.chelekom-full-calendar [data-part="background"] {
+  z-index: 1;
+  inset-inline: 0;
+  height: calc(var(--fc-height) * 1%);
+  pointer-events: none;
+}
+
+.chelekom-full-calendar__now {
+  z-index: 3;
+  inset-inline: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Timeline: resources down the side (sticky when the days scroll across). */
+.chelekom-full-calendar [data-part="timeline"] {
+  overflow-x: auto;
+}
+
+.chelekom-full-calendar [data-part="timeline"] > [data-part="header-row"],
+.chelekom-full-calendar [data-part="timeline-row"] {
+  min-width: calc(
+      var(--fc-resource-width, 10rem) +
+      var(--fc-cols) *
+      var(--fc-day-min-width, 2.75rem)
+    );
+}
+
+.chelekom-full-calendar [data-part="timeline"] [data-part="corner"],
+.chelekom-full-calendar
+  [data-part="timeline-row"]
+  > .chelekom-full-calendar__resource {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 3;
+  flex: 0 0 var(--fc-resource-width, 10rem);
+  background: var(--fc-head-background, canvas);
+}
+
+.chelekom-full-calendar__popover {
+  position: absolute;
+  z-index: 30;
+  top: 3rem;
+  inset-inline: 0;
+  width: max-content;
+  max-width: min(24rem, 100% - 2rem);
+  margin-inline: auto;
+}
+
+/* The previous / next glyphs point the way the calendar reads. */
+.chelekom-full-calendar:dir(rtl)
+  .chelekom-full-calendar__nav-button:is(
+    [data-part="previous"],
+    [data-part="next"]
+  ) {
+  transform: scalex(-1);
+}

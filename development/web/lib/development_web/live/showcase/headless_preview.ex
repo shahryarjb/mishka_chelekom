@@ -15,6 +15,7 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
   import DevelopmentWeb.Components.Headless.Avatar
   import DevelopmentWeb.Components.Headless.Burger
   import DevelopmentWeb.Components.Headless.Chart
+  import DevelopmentWeb.Components.Headless.FullCalendar, only: [full_calendar: 1]
   import DevelopmentWeb.Components.Headless.Checkbox
   import DevelopmentWeb.Components.Headless.CheckboxGroup
   import DevelopmentWeb.Components.Headless.Chip
@@ -176,6 +177,40 @@ defmodule DevelopmentWeb.Showcase.HeadlessPreview do
       "[&_[data-part=empty]]:px-3 [&_[data-part=empty]]:py-2 [&_[data-part=empty]]:text-sm [&_[data-part=empty]]:text-[var(--c-base-content)]/50",
       "[&_[data-part=create]]:cursor-pointer [&_[data-part=create]]:rounded [&_[data-part=create]]:px-3 [&_[data-part=create]]:py-1.5 [&_[data-part=create]]:text-sm [&_[data-part=create]]:text-[var(--c-primary)] [&_[data-part=create]]:hover:bg-[var(--c-base-200)] [&_[data-part=create][data-hidden]]:hidden"
     ]
+  end
+
+  def show(%{component: "full_calendar"} = assigns) do
+    ~H"""
+    <div class="flex w-full flex-col gap-2">
+      <.full_calendar
+        id={@id}
+        preset="planner"
+        now={DevelopmentWeb.Showcase.CalendarSamples.now()}
+        events={DevelopmentWeb.Showcase.CalendarSamples.events()}
+        class="w-full overflow-hidden rounded-lg border border-[var(--c-base-300)] bg-[var(--c-base-100)] text-sm [--fc-head-background:var(--c-base-100)] [--fc-row-min-height:5rem] [--fc-scroll-height:24rem] [--fc-slot-height:2rem]"
+        toolbar_class="gap-2 border-b border-[var(--c-base-300)] p-2"
+        title_class="font-semibold"
+        nav_class="rounded px-2.5 py-1 hover:bg-[var(--c-base-200)]"
+        view_button_class="rounded px-2.5 py-1 hover:bg-[var(--c-base-200)] aria-pressed:bg-[var(--c-primary)] aria-pressed:text-[var(--c-primary-content)]"
+        header_class="py-1.5 text-center text-xs text-[var(--c-base-content)]/60"
+        week_class="border-t border-[var(--c-base-300)]"
+        day_class="border-e border-[var(--c-base-300)] hover:bg-[var(--c-base-200)] data-[outside]:bg-[var(--c-base-200)]/50 data-[selected]:bg-[var(--c-primary)]/15 data-[anchor]:bg-[var(--c-primary)]/30 data-[selecting]:bg-[var(--c-primary)]/10"
+        day_number_class="m-1 grid size-6 place-items-center rounded-full text-xs data-[outside]:opacity-40 data-[today]:bg-[var(--c-primary)] data-[today]:text-[var(--c-primary-content)]"
+        slot_class="border-e border-b border-[var(--c-base-200)] hover:bg-[var(--c-base-200)] data-[selected]:bg-[var(--c-primary)]/20"
+        axis_class="pe-2 text-end text-[11px] text-[var(--c-base-content)]/60"
+        event_class="m-px truncate rounded px-1.5 py-0.5 text-start text-xs text-white [background:var(--fc-event-color,var(--c-primary))]"
+        more_class="mx-1 text-xs text-[var(--c-base-content)]/70 hover:underline"
+        popover_class="flex flex-col gap-1 rounded-lg border border-[var(--c-base-300)] bg-[var(--c-base-100)] p-3 shadow-lg"
+        now_class="border-t-2 border-red-500"
+      />
+      <.link
+        navigate="/showcase/calendar"
+        class="self-end text-xs text-[var(--c-primary)] hover:underline"
+      >
+        Hotel, clinic, viewing and planner demos →
+      </.link>
+    </div>
+    """
   end
 
   def show(%{component: "drawer"} = assigns) do
